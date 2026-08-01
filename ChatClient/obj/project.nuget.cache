@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "dgSpecHash": "48obLYDmxMg=",
+  "success": true,
+  "projectFilePath": "E:\\Рабочий стол\\C#\\SignalR\\ChatApp\\ChatServer\\ChatClient\\ChatClient.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.connections.abstractions\\10.0.10\\microsoft.aspnetcore.connections.abstractions.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.http.connections.client\\10.0.10\\microsoft.aspnetcore.http.connections.client.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.http.connections.common\\10.0.10\\microsoft.aspnetcore.http.connections.common.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.signalr.client\\10.0.10\\microsoft.aspnetcore.signalr.client.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.signalr.client.core\\10.0.10\\microsoft.aspnetcore.signalr.client.core.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.signalr.common\\10.0.10\\microsoft.aspnetcore.signalr.common.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.signalr.protocols.json\\10.0.10\\microsoft.aspnetcore.signalr.protocols.json.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\10.0.10\\microsoft.extensions.dependencyinjection.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.10\\microsoft.extensions.dependencyinjection.abstractions.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.features\\10.0.10\\microsoft.extensions.features.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.logging\\10.0.10\\microsoft.extensions.logging.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.10\\microsoft.extensions.logging.abstractions.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.options\\10.0.10\\microsoft.extensions.options.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.10\\microsoft.extensions.primitives.10.0.10.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\system.net.http.json\\10.0.10\\system.net.http.json.10.0.10.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference System.Net.Http.Json не будет урезано. Рассмотрите возможность удаления этого пакета из зависимостей, так как он, вероятно, не требуется.",
+      "projectPath": "E:\\Рабочий стол\\C#\\SignalR\\ChatApp\\ChatServer\\ChatClient\\ChatClient.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\Рабочий стол\\C#\\SignalR\\ChatApp\\ChatServer\\ChatClient\\ChatClient.csproj",
+      "libraryId": "System.Net.Http.Json",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}
