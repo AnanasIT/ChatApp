@@ -8,6 +8,7 @@ using ServiceResultModel;
 using AuthResponseDTO;
 using Microsoft.EntityFrameworkCore;
 using PasswordHelperModel;
+using LoginDTO;
 
 using IJwtServiceModel;
 
@@ -70,6 +71,35 @@ public class AuthService : IAuthService
            Token = token,
            UserName = getUser.UserName,
            Role = getUser.Role
+        });
+    }
+
+
+
+    public async Task<ServiceResult<AuthResponse>>? LoginAsync(LoginRequestUser request)
+    {
+        _logger.LogInformation($"Запрос от {request.UserName} на вход в аккаунт!");
+        var findUser = await _db.Users.FirstOrDefaultAsync(t => t.UserName == request.UserName);
+
+        if (findUser is null){
+            _logger.LogError($"Пользователя с именем {request.UserName} не найдено в базе данных!");
+            return ServiceResult<AuthResponse>.Failure($"Пользователя с именем {request.UserName} не найдено в базе данных!");
+        }
+
+        bool verifyPassword = HashPassword.VerifyPassword(request.Password, findUser.PasswordHash);
+        if (verifyPassword is false){
+            _logger.LogError($"Неправильный пароль!");
+            return ServiceResult<AuthResponse>.Failure($"Неправильный пароль!");
+        }
+
+        _logger.LogInformation($"Успешный вход в аккаунт {request.UserName}");
+        var token = _jwt.GenerateToken(findUser);
+
+        return ServiceResult<AuthResponse>.Success(new AuthResponse
+        {
+           Token = token,
+           Role = findUser.Role,
+           UserName = findUser.UserName 
         });
     }
 }
