@@ -1,4 +1,4 @@
-namespace MessageDto;
+namespace MessageDTO;
 
 public class MessageDto
 {
