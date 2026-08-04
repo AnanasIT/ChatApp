@@ -115,4 +115,26 @@ public class UserService : IUserService
         return ServiceResult<bool>.Success(true);
     }
 
+
+    public async Task<ServiceResult<UserDto>?> GetProfileAsync(int userId)
+    {
+        _logger.LogInformation($"Запрос профиля пользователя с ID {userId}");
+
+        var user = await _db.Users.FirstOrDefaultAsync(t => t.Id == userId);
+        
+        if (user is null) {
+            _logger.LogError($"Пользователь с ID {userId} не найден!");
+            return null;
+        }
+
+        return ServiceResult<UserDto>.Success(new UserDto
+        {
+           Id = user.Id,
+           UserName = user.UserName,
+           Email = user.Email,
+           Role = user.Role,
+           CreatedAt = user.CreatedAt 
+        });
+    }
+
 }
