@@ -5,6 +5,9 @@ using System.Security.Claims;
 using IMessageServcieModel;
 using IRoomServiceModel;
 
+using FluentValidation;
+using ValidatorModel;
+
 
 namespace ChatHubs;
 
@@ -13,13 +16,20 @@ public class ChatHub : Hub
 {
     private readonly IMessageService _messageService;
     private readonly IRoomService _roomService;
+    private readonly IValidator<string> _messageValidator;
+    private readonly IValidator<string> _roomValidator;
     private ILogger<ChatHub> _logger;
     private static readonly Dictionary<string, string> _onlineUsers = new();
 
-    public ChatHub(IMessageService messageService, IRoomService roomService, ILogger<ChatHub> logger){
+    public ChatHub(IMessageService messageService, IRoomService roomService, 
+                   ILogger<ChatHub> logger, IValidator<string> messageValidator, 
+                   IValidator<string> roomValidator) {
+
         _messageService = messageService;
         _roomService = roomService;
         _logger = logger;
+        _messageValidator = messageValidator;
+        _roomValidator = roomValidator;
     }
 
     private string? GetUserName() => Context.User?.Identity?.Name;
@@ -67,6 +77,14 @@ public class ChatHub : Hub
 
     public async Task SendMessageToRoom(string message, string roomName)
     {
+        var valid = await _messageValidator.ValidateAsync(message);
+        
+        if (!valid.IsValid) {
+            var errors = string.Join(", ", valid.Errors.Select(e => e.ErrorMessage));
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", $"X {errors}");
+            return;
+        }
+
         var userName = GetUserName() ?? "Аноним";
         var userId = GetUserId();
 
@@ -80,8 +98,34 @@ public class ChatHub : Hub
     }
 
 
+    public async Task SendMessage(string message)
+    {
+        var valid = await _messageValidator.ValidateAsync(message);
+
+        if (!valid.IsValid) {
+            var errors = string.Join(", ", valid.Errors.Select(e => e.ErrorMessage));
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", $"X {errors}");
+            return;
+        }
+
+        var userName = GetUserName() ?? "Аноним";
+        var userId = GetUserId();
+
+        await _messageService.SaveMessageAsync(userName, userId, "Общий", message);
+        await Clients.All.SendAsync("ReceiveMessage", userName, message);
+    }
+
+
     public async Task JoinRoom(string roomName)
     {
+        var valid = await _roomValidator.ValidateAsync(roomName);
+
+        if (!valid.IsValid) {
+            var errors = string.Join(", ", valid.Errors.Select(e => e.ErrorMessage));
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", $"X {errors}");
+            return;
+        }
+
         var userName = GetUserName() ?? "Аноним";
         
         if (string.IsNullOrWhiteSpace(roomName)) roomName = "Общий";
@@ -96,6 +140,14 @@ public class ChatHub : Hub
 
     public async Task LeaveRoom(string roomName)
     {
+        var valid = await _roomValidator.ValidateAsync(roomName);
+        
+        if (!valid.IsValid) {
+            var errors = string.Join(", ", valid.Errors.Select(e => e.ErrorMessage));
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", $"X {errors}");
+            return;
+        }
+
         var userName = GetUserName() ?? "Аноним";
 
         if (string.IsNullOrWhiteSpace(roomName)) return;
@@ -107,6 +159,14 @@ public class ChatHub : Hub
 
     public async Task SendPrivateMessage(string toUser, string message)
     {
+        var valid = await _messageValidator.ValidateAsync(message);
+        
+        if (!valid.IsValid) {
+            var errors = string.Join(", ", valid.Errors.Select(e => e.ErrorMessage));
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", $"X {errors}");
+            return;
+        }
+
         var fromUser = GetUserName() ?? "Аноним";
         var userId = GetUserId();
 
