@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
 using FluentValidation;
 
 using AppDb;
@@ -13,11 +14,8 @@ using IMessageServcieModel;
 using IRoomServiceModel;
 using IUserServiceModel;
 
-using AuthResponseDTO;
 using LoginDTO;
-using MessageDTO;
 using RegisterDTO;
-using UserDTO;
 
 using ValidatorModel;
 using JwtServiceModel;
@@ -26,81 +24,127 @@ using MessageServiceModel;
 using RoomServiceModel;
 using UserServiceModel;
 
+namespace ChatServer;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=chat.db"));
-
-var secretKey = builder.Configuration["JwtSettings:SecretKey"] ?? throw new Exception("JwtSettings:SecretKey не найден в User Secrets!");
-
-Console.ForegroundColor = ConsoleColor.Green;
-Console.WriteLine($"Ключ загружен! Длина {secretKey.Length}");
-Console.ResetColor();
-
-var key = Encoding.UTF8.GetBytes(secretKey);
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+public class Program
+{
+    public static async Task Main(string[] args)
     {
-       options.TokenValidationParameters = new TokenValidationParameters
-       {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateLifetime = true,
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ClockSkew = TimeSpan.Zero
-       };
-      
-      options.Events = new JwtBearerEvents
-      {
-        OnMessageReceived = context =>
-        {
-            var token = context.Request.Query["access_token"];
-            var path = context.HttpContext.Request.Path;
+        var builder = WebApplication.CreateBuilder(args);
 
-            if (!string.IsNullOrEmpty(token) && path.StartsWithSegments("/chat"))
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+
+        builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=chat.db"));
+
+        var secretKey = builder.Configuration["JwtSettings:SecretKey"] ?? throw new Exception("JwtSettings:SecretKey не найден в User Secrets!");
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"Ключ загружен! Длина {secretKey.Length}");
+        Console.ResetColor();
+
+        var key = Encoding.UTF8.GetBytes(secretKey);
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                context.Token = token;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateLifetime = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(token) && path.StartsWithSegments("/chat"))
+                        {
+                            context.Token = token;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
+            });
+
+        builder.Services.AddAuthorization();
+
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<ICacheService, CacheService>();
+
+        builder.Services.AddScoped<IJwtService, JwtService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IMessageService, MessageService>();
+        builder.Services.AddScoped<IRoomService, RoomService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+
+        builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+
+        builder.Services.AddSignalR();
+
+        var app = builder.Build();
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
+        }
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        // ===== PUBLIC ENDPOINTS =====
+        app.MapGet("/", () => "Сервер запущен. Присоединяйся к чату через C# клиент!");
+
+        app.MapPost("/register", async (RegisterRequestUser request, IAuthService service, IValidator<RegisterRequestUser> validator) =>
+        {
+            var valid = await validator.ValidateAsync(request);
+
+            if (!valid.IsValid)
+            {
+                var errors = valid.Errors.Select(e => e.ErrorMessage);
+                return Results.BadRequest(new { errors });
             }
 
-            return Task.CompletedTask;
-        }  
-      };
+            var result = await service.RegisterAsync(request)!;
+            return result.IsSucces ? Results.Ok(result) : Results.BadRequest(new { error = result.Error });
+        });
 
-    });
+        app.MapPost("/login", async (LoginRequestUser request, IAuthService service, IValidator<LoginRequestUser> validator) =>
+        {
+            var valid = await validator.ValidateAsync(request);
 
-builder.Services.AddAuthorization();
+            if (!valid.IsValid)
+            {
+                var errors = valid.Errors.Select(e => e.ErrorMessage);
+                return Results.BadRequest(new { errors });
+            }
 
-builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ICacheService, CacheService>();
+            var result = await service.LoginAsync(request)!;
+            return result.IsSucces ? Results.Ok(result) : Results.BadRequest(new { error = result.Error });
+        });
 
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IRoomService, RoomService>();
-builder.Services.AddScoped<IUserService, UserService>();
+        // ===== SIGNALR HUB =====
+        app.MapHub<ChatHub>("/chat");
 
-builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<MessageValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<RoomValidator>();
+        // ===== PRIVATE ENDPOINTS =====
+        app.MapGet("/profile", async (HttpContext context, IUserService service) =>
+        {
+            var userId = int.Parse(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var result = await service.GetProfileAsync(userId);
+            return result!.IsSucces ? Results.Ok(result) : Results.BadRequest(new { error = result.Error });
+        })
+        .RequireAuthorization();
 
-builder.Services.AddSignalR();
-
-var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+        // ===== START =====
+        await app.RunAsync();
+    }
 }
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-
-// ======================== ENDPOINTS ==========================
