@@ -145,6 +145,6 @@ public class Program
         .RequireAuthorization();
 
         // ===== START =====
-        await app.RunAsync();
+        app.Run();
     }
 }
