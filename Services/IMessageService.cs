@@ -1,7 +1,7 @@
 using ServiceResultModel;
 using MessageDTO;
 
-namespace IMessageServcieDTO;
+namespace IMessageServcieModel;
 
 public interface IMessageService
 {

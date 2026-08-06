@@ -38,10 +38,10 @@ public class AuthService : IAuthService
 
         string Role = string.Empty;
 
-        if (_config["AdminSettings:AdminPassword"] == request.Password && 
-            _config["AdminSettings:AdminName"] == request.UserName) {
-                Role = "Admin";
-            }
+        if (_config["Admin:Username"] == request.Password && 
+            _config["Admin:Password"] == request.UserName) {
+            Role = "Admin";
+        }
 
         else
         {
@@ -69,7 +69,7 @@ public class AuthService : IAuthService
         return ServiceResult<AuthResponse>.Success(new AuthResponse
         {
            Token = token,
-           UserName = getUser.UserName,
+           UserName = getUser!.UserName,
            Role = getUser.Role
         });
     }

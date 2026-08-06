@@ -25,7 +25,7 @@ public class UserService : IUserService
         var findUser = await _db.Users.FirstOrDefaultAsync(t => t.Id == userId);
         if (findUser is null){
             _logger.LogWarning($"Пользователя с ID {userId} не найдено!");
-            return ServiceResult<UserDto>.Success(null);
+            return ServiceResult<UserDto>.Failure($"Пользователя с ID {userId} не найдено!");
         }
 
         _logger.LogInformation($"Пользователь по ID {userId} получен!");
@@ -47,7 +47,7 @@ public class UserService : IUserService
         var findUser = await _db.Users.FirstOrDefaultAsync(t => t.UserName == username);
         if (findUser is null){
             _logger.LogWarning($"Пользователя с именем {username} не найдено!");
-            return ServiceResult<UserDto>.Success(null);
+            return ServiceResult<UserDto>.Failure($"Пользователя с именем {username} не найдено!");
         }
 
         _logger.LogInformation($"Пользователь по имени {username} получен!");
@@ -124,7 +124,7 @@ public class UserService : IUserService
         
         if (user is null) {
             _logger.LogError($"Пользователь с ID {userId} не найден!");
-            return null;
+            return ServiceResult<UserDto>.Failure($"Пользователь с ID {userId} не найден!");
         }
 
         return ServiceResult<UserDto>.Success(new UserDto
