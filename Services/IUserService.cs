@@ -10,4 +10,5 @@ public interface IUserService
     Task<ServiceResult<List<UserDto>>> GetAllUserAsync();
     Task<ServiceResult<bool>> UpdateUserRoleAsync(int userId, string newRole);
     Task<ServiceResult<bool>> DeleteUserAsync(int userId);
+    Task<ServiceResult<UserDto>?> GetProfileAsync(int userId);
 }

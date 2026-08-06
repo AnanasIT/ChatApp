@@ -1,4 +1,3 @@
-using IMessageServcieModel;
 using AppDb;
 using UserModel;
 using RegisterDTO;
@@ -6,7 +5,8 @@ using MessageDTO;
 using MessageModel;
 using ServiceResultModel;
 using RoomModel;
-using ICacheModel;
+using ICache;
+using IMessageServcieDTO;
 
 using Microsoft.EntityFrameworkCore; 
 
@@ -82,7 +82,7 @@ public class MessageService : IMessageService
         _logger.LogInformation($"История для {roomName} загружается из БД...");
 
         var room = await _db.Rooms.FirstOrDefaultAsync(t => t.Name == roomName);
-        if (room is null) return ServiceResult<List<MessageDto>>.Success(null);
+        if (room is null) return ServiceResult<List<MessageDto>>.Success(null!);
 
         var result = await _db.Messages
             .Include(m => m.User)

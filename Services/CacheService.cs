@@ -1,5 +1,6 @@
-using ICache;
+
 using Microsoft.Extensions.Caching.Memory;
+using ICache;
 
 public class CacheService : ICacheService
 {

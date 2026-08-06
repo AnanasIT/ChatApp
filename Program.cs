@@ -8,9 +8,9 @@ using FluentValidation;
 using AppDb;
 using ChatHubs;
 using IAuthServiceModel;
-using ICacheModel;
+using ICache;
 using IJwtServiceModel;
-using IMessageServcieModel;
+using IMessageServcieDTO;
 using IRoomServiceModel;
 using IUserServiceModel;
 
