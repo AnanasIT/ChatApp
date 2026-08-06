@@ -1,4 +1,4 @@
-using ICacheModel;
+using ICache;
 using Microsoft.Extensions.Caching.Memory;
 
 public class CacheService : ICacheService
