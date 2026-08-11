@@ -77,10 +77,12 @@ public class ChatHub : Hub
 
     public async Task DeleteMessage(int messageId)
     {
+        _logger.LogInformation($"🔥 DeleteMessage вызван! ID={messageId}!");
         var userId = GetUserId();
         bool isAdmin = Context.User?.IsInRole("Admin") ?? false;
 
         var result = await _messageService.DeleteMessageAsync(messageId, userId, isAdmin);
+        _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}!");
         if (result.IsSucces) {
             await Clients.All.SendAsync("MessageDeleted", messageId);
         }
@@ -89,8 +91,12 @@ public class ChatHub : Hub
 
     public async Task EditMessage(int messageId, string newContent)
     {
+        _logger.LogInformation($"🔥 EditMessage вызван! ID={messageId}, Content={newContent}");
         var userId = GetUserId();
         var result = await _messageService.EditMessageAsync(messageId, userId, newContent);
+
+        _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}");
+
         if (result.IsSucces) {
             await Clients.All.SendAsync("MessageEdited", messageId, newContent);
         }
@@ -217,15 +223,28 @@ public class ChatHub : Hub
 
 
     public async Task GetHistoryMessagesAsync(string roomName, int count = 50)
-    {
-        var userName = GetUserName() ?? "Аноним";
+    {   
+        try
+        {  
+            _logger.LogInformation($"🔥🔥🔥 GetHistoryMessageAsync вызван, roomName={roomName}, count={count}");
+            var userName = GetUserName() ?? "Аноним";
 
-        if (string.IsNullOrWhiteSpace(roomName)) roomName = "Общий";
+             _logger.LogInformation($"{userName} запросил историю {roomName} в количестве {count}");
 
-        var history = await _messageService.GetHistoryAsync(roomName, count);
-        await Clients.Caller.SendAsync("ReceiveHistory", history);
+            if (string.IsNullOrWhiteSpace(roomName)) roomName = "Общий";
 
-        _logger.LogInformation($"{userName} запросил историю {roomName} в количестве {count}");
+            var history = await _messageService.GetHistoryAsync(roomName, count);
+            _logger.LogInformation($"🔥 Найдено сообщений: {history?.Data?.Count}");
+            _logger.LogInformation($"🔥 Первое сообщение: {history?.Data?.FirstOrDefault()?.Content ?? "Нет"}");
+
+            _logger.LogInformation($"✅  Получена история сообщений в количестве {count}");
+            await Clients.Caller.SendAsync("ReceiveHistory", history?.Data);
+        }
+
+        catch (Exception ex)
+        {
+            _logger.LogError($"Ошибка GetHistoryMessageAsync: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
 }
