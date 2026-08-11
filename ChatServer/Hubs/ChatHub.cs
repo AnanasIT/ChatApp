@@ -16,14 +16,14 @@ public class ChatHub : Hub
 {
     private readonly IMessageService _messageService;
     private readonly IRoomService _roomService;
-    private readonly IValidator<string> _messageValidator;
-    private readonly IValidator<string> _roomValidator;
+    private readonly MessageValidator _messageValidator;
+    private readonly RoomValidator _roomValidator;
     private ILogger<ChatHub> _logger;
     private static readonly Dictionary<string, string> _onlineUsers = new();
 
     public ChatHub(IMessageService messageService, IRoomService roomService, 
-                   ILogger<ChatHub> logger, IValidator<string> messageValidator, 
-                   IValidator<string> roomValidator) {
+                   ILogger<ChatHub> logger, MessageValidator messageValidator, 
+                   RoomValidator roomValidator) {
 
         _messageService = messageService;
         _roomService = roomService;
@@ -77,28 +77,55 @@ public class ChatHub : Hub
 
     public async Task DeleteMessage(int messageId)
     {
-        _logger.LogInformation($"🔥 DeleteMessage вызван! ID={messageId}!");
-        var userId = GetUserId();
-        bool isAdmin = Context.User?.IsInRole("Admin") ?? false;
+        try
+        {
+            _logger.LogInformation($"🔥 DeleteMessage вызван! ID={messageId}!");
 
-        var result = await _messageService.DeleteMessageAsync(messageId, userId, isAdmin);
-        _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}!");
-        if (result.IsSucces) {
-            await Clients.All.SendAsync("MessageDeleted", messageId);
+            var userId = GetUserId();
+            bool isAdmin = Context.User?.IsInRole("Admin") ?? false;
+            var result = await _messageService.DeleteMessageAsync(messageId, userId, isAdmin);
+
+            _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}!");
+            
+            if (result.IsSucces) {
+                Console.WriteLine($"✅ Сообщение {messageId} удалено!");
+                await Clients.All.SendAsync("MessageDeleted", messageId);
+            }
+
+            else {
+                Console.WriteLine($"❌ {result.Error}");
+            }
+        } 
+
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ ОШИБКА: {ex.Message}");
         }
     }
 
 
     public async Task EditMessage(int messageId, string newContent)
     {
-        _logger.LogInformation($"🔥 EditMessage вызван! ID={messageId}, Content={newContent}");
-        var userId = GetUserId();
-        var result = await _messageService.EditMessageAsync(messageId, userId, newContent);
+        try
+        {
+             _logger.LogInformation($"🔥 EditMessage вызван! ID={messageId}, Content={newContent}");
+            var userId = GetUserId();
+            var result = await _messageService.EditMessageAsync(messageId, userId, newContent);
 
-        _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}");
+            _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}");
 
-        if (result.IsSucces) {
-            await Clients.All.SendAsync("MessageEdited", messageId, newContent);
+            if (result.IsSucces) {
+                Console.WriteLine($"✅ Сообщение {messageId} изменено!");
+                await Clients.All.SendAsync("MessageEdited", messageId, newContent);
+            }
+
+            else {
+                Console.WriteLine($"❌ {result.Error}");
+            }
+
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"❌ ОШИБКА: {ex.Message}");
         }
     }
 
