@@ -4,909 +4,551 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>💬  Голубой Чат</title>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .chat-card { width: 100%; max-width: 720px; height: 95vh; max-height: 850px; background: rgba(255,255,255,0.65); backdrop-filter: blur(16px); border-radius: 40px; box-shadow: 0 20px 60px rgba(0,80,200,0.20); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.6); }
+        #auth { background: rgba(255,255,255,0.9); padding: 40px 30px; display: flex; flex-direction: column; gap: 14px; }
+        #auth h2 { color: #0a3b6b; font-size: 24px; text-align: center; }
+        #auth input { padding: 12px 18px; border-radius: 40px; border: 1px solid rgba(0,0,0,0.1); font-size: 15px; outline: none; background: rgba(255,255,255,0.6); }
+        #auth input:focus { border-color: #1e88e5; background: white; }
+        #auth .btn-group { display: flex; gap: 12px; }
+        #auth button { padding: 12px 28px; border-radius: 40px; border: none; font-weight: 600; font-size: 15px; cursor: pointer; flex: 1; }
+        #auth .btn-login { background: #1e88e5; color: white; }
+        #auth .btn-login:hover { background: #1565c0; }
+        #auth .btn-register { background: #e0e0e0; color: #333; }
+        #auth .btn-register:hover { background: #ccc; }
+        .auth-error { color: #d32f2f; font-size: 14px; text-align: center; min-height: 20px; }
+        .auth-success { color: #2e7d32; font-size: 14px; text-align: center; min-height: 20px; }
+        #chat-area { display: none; flex-direction: column; height: 100%; }
+        #chat-area.active { display: flex; }
+        .chat-header { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+        .chat-header h1 { font-size: 20px; font-weight: 600; color: #0a3b6b; display: flex; align-items: center; gap: 10px; }
+        .chat-header h1 span { background: #1e88e5; color: white; font-size: 12px; padding: 2px 12px; border-radius: 40px; }
+        .online-badge { background: #43a047; color: white; font-size: 13px; font-weight: 500; padding: 6px 16px; border-radius: 40px; display: flex; align-items: center; gap: 8px; }
+        .online-badge::before { content: ''; display: inline-block; width: 10px; height: 10px; background: #b9f6ca; border-radius: 50%; animation: pulse-dot 1.8s infinite; }
+        @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+        .user-info, .user-role { font-size: 14px; background: rgba(255,255,255,0.5); padding: 4px 14px; border-radius: 40px; }
+        .user-role { font-size: 12px; background: rgba(0,0,0,0.08); }
+        .room-bar { background: rgba(255,255,255,0.5); backdrop-filter: blur(8px); padding: 10px 16px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.6); flex-shrink: 0; align-items: center; }
+        .room-btn { background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.5); padding: 6px 16px; border-radius: 40px; font-size: 13px; font-weight: 500; color: #0a3b6b; cursor: pointer; }
+        .room-btn:hover { background: rgba(30,136,229,0.15); border-color: #1e88e5; }
+        .room-btn.active { background: #1e88e5; border-color: #1e88e5; color: white; box-shadow: 0 4px 12px rgba(30,136,229,0.3); }
 
-        body {
-            background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+        .room-input-group { display: flex; gap: 6px; flex: 1; min-width: 120px; }
+        .room-input-group input { flex: 1; padding: 6px 12px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.5); font-size: 13px; outline: none; }
+        .room-input-group input:focus { border-color: #1e88e5; background: rgba(255,255,255,0.8); }
+        .room-input-group button { padding: 6px 14px; border-radius: 40px; border: none; background: #1e88e5; color: white; font-weight: 500; cursor: pointer; }
+        .room-input-group button:hover { background: #1565c0; }
+        .messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; scroll-behavior: smooth; }
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .messages::-webkit-scrollbar-thumb { background: #90caf9; border-radius: 10px; }
+        .msg { max-width: 78%; padding: 10px 16px; border-radius: 20px; font-size: 14px; line-height: 1.5; word-wrap: break-word; animation: slideIn 0.25s ease; position: relative; }
+        .msg.system { align-self: center; background: rgba(0,0,0,0.04); color: #555; font-size: 13px; padding: 4px 16px; border-radius: 40px; max-width: 90%; }
+        .msg.self { align-self: flex-end; background: #1e88e5; color: white; border-bottom-right-radius: 6px; }
+        .msg.other { align-self: flex-start; background: white; color: #0a3b6b; border-bottom-left-radius: 6px; border: 1px solid rgba(255,255,255,0.4); }
+        .msg.deleted { opacity: 0.5; pointer-events: none; }
+        .msg .meta { font-size: 11px; opacity: 0.6; margin-top: 4px; display: flex; gap: 10px; align-items: center; }
+        .msg .username { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+        .msg .msg-actions { display: flex; gap: 4px; margin-top: 4px; }
+        .msg .msg-actions button { background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; transition: 0.2s; opacity: 0.4; }
+        .msg .msg-actions button:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+        .msg.self .msg-actions button { color: white; }
+        .msg.self .msg-actions button:hover { background: rgba(255,255,255,0.2); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .input-area { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); padding: 12px 20px 16px; border-top: 1px solid rgba(255,255,255,0.6); display: flex; gap: 12px; flex-shrink: 0; }
+        .input-area input { flex: 1; padding: 12px 18px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.5); font-size: 15px; outline: none; }
+        .input-area input:focus { border-color: #1e88e5; background: rgba(255,255,255,0.85); }
+        .input-area button { padding: 12px 28px; border-radius: 40px; border: none; background: #1e88e5; color: white; font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 16px rgba(30,136,229,0.2); }
+        .input-area button:hover { background: #1565c0; transform: scale(1.02); }
+        .admin-btn { background: #6c5ce7; color: white; border: none; border-radius: 20px; padding: 6px 16px; cursor: pointer; font-size: 13px; }
+        .admin-btn:hover { background: #5a4bd1; }
+        .admin-btn.danger { background: #d32f2f; }
+        .admin-btn.danger:hover { background: #b71c1c; }
+        .admin-panel { display: none; background: rgba(255,255,255,0.9); padding: 16px; border-bottom: 1px solid #ddd; max-height: 300px; overflow-y: auto; }
+        .admin-panel table { width: 100%; font-size: 13px; border-collapse: collapse; }
+        .admin-panel th { background: #f0f0f0; padding: 6px; text-align: left; }
+        .admin-panel td { padding: 6px; border-bottom: 1px solid #eee; }
 
-        .chat-card {
-            width: 100%;
-            max-width: 720px;
-            height: 95vh;
-            max-height: 850px;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 40px;
-            box-shadow: 0 20px 60px rgba(0, 80, 200, 0.20);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-        }
-
-        /* ===== АВТОРИЗАЦИЯ ===== */
-        #auth {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            padding: 40px 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-        }
-
-        #auth h2 {
-            color: #0a3b6b;
-            font-size: 24px;
-            text-align: center;
-        }
-
-        #auth .input-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        #auth input {
-            flex: 1;
-            padding: 12px 18px;
-            border-radius: 40px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            font-size: 15px;
-            outline: none;
-            background: rgba(255, 255, 255, 0.6);
-            min-width: 120px;
-        }
-
-        #auth input:focus {
-            border-color: #1e88e5;
-            background: white;
-        }
-
-        #auth .btn-group {
-            display: flex;
-            gap: 12px;
-        }
-
-        #auth button {
-            padding: 12px 28px;
-            border-radius: 40px;
-            border: none;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
-            flex: 1;
-        }
-
-        #auth .btn-login {
-            background: #1e88e5;
-            color: white;
-        }
-
-        #auth .btn-login:hover {
-            background: #1565c0;
-            transform: scale(1.02);
-        }
-
-        #auth .btn-register {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        #auth .btn-register:hover {
-            background: #ccc;
-        }
-
-        #auth .auth-error {
-            color: #d32f2f;
-            font-size: 14px;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        #auth .auth-success {
-            color: #2e7d32;
-            font-size: 14px;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        /* ===== ЧАТ ===== */
-        #chat-area {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        #chat-area.active {
-            display: flex;
-        }
-
-        .chat-header {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            padding: 16px 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .chat-header h1 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #0a3b6b;
-            display: flex;
-
-align-items: center;
-            gap: 10px;
-        }
-
-        .chat-header h1 span {
-            background: #1e88e5;
-            color: white;
-            font-size: 12px;
-            padding: 2px 12px;
-            border-radius: 40px;
-        }
-
-        .online-badge {
-            background: #43a047;
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 6px 16px;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .online-badge::before {
-            content: '';
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background: #b9f6ca;
-            border-radius: 50%;
-            animation: pulse-dot 1.8s infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.4;
-                transform: scale(0.8);
-            }
-        }
-
-        .user-info {
-            font-size: 14px;
-            color: #0a3b6b;
-            background: rgba(255, 255, 255, 0.5);
-            padding: 4px 14px;
-            border-radius: 40px;
-        }
-
-        .room-bar {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(8px);
-            padding: 10px 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-            flex-shrink: 0;
-            align-items: center;
-        }
-
-        .room-btn {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #0a3b6b;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .room-btn:hover {
-            background: rgba(30, 136, 229, 0.15);
-            border-color: #1e88e5;
-        }
-
-        .room-btn.active {
-            background: #1e88e5;
-            border-color: #1e88e5;
-            color: white;
-            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
-        }
-
-        .room-input-group {
-            display: flex;
-            gap: 6px;
-            flex: 1;
-            min-width: 120px;
-        }
-
-        .room-input-group input {
-            flex: 1;
-            padding: 6px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            background: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
-            outline: none;
-        }
-
-        .room-input-group input:focus {
-            border-color: #1e88e5;
-            background: rgba(255, 255, 255, 0.8);
-        }
-
-        .room-input-group button {
-            padding: 6px 14px;
-            border-radius: 40px;
-            border: none;
-            background: #1e88e5;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-
-        .room-input-group button:hover {
-            background: #1565c0;
-        }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            scroll-behavior: smooth;
-        }
-
-        .messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .messages::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
-
-        .messages::-webkit-scrollbar-thumb {
-            background: #90caf9;
-            border-radius: 10px;
-        }
-
-        .msg {
-            max-width: 78%;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            line-height: 1.5;
-
-word-wrap: break-word;
-            animation: slideIn 0.25s ease;
-            position: relative;
-        }
-
-        .msg.system {
-            align-self: center;
-            background: rgba(0, 0, 0, 0.04);
-            color: #555;
-            font-size: 13px;
-            padding: 4px 16px;
-            border-radius: 40px;
-            max-width: 90%;
-        }
-
-        .msg.self {
-            align-self: flex-end;
-            background: #1e88e5;
-            color: white;
-            border-bottom-right-radius: 6px;
-        }
-
-        .msg.other {
-            align-self: flex-start;
-            background: white;
-            color: #0a3b6b;
-            border-bottom-left-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .msg.deleted {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .msg .meta {
-            font-size: 11px;
-            opacity: 0.6;
-            margin-top: 4px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .msg .username {
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 2px;
-        }
-
-        .msg .msg-actions {
-            display: flex;
-            gap: 4px;
-            margin-top: 4px;
-        }
-
-        .msg .msg-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: 0.2s;
-            opacity: 0.4;
-        }
-
-        .msg .msg-actions button:hover {
-            opacity: 1;
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .msg.self .msg-actions button {
-            color: white;
-        }
-
-        .msg.self .msg-actions button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .msg .msg-actions .edit-btn:hover {
-            color: #fdd835;
-        }
-
-        .msg .msg-actions .delete-btn:hover {
-            color: #ef5350;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .input-area {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            padding: 12px 20px 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.6);
-            display: flex;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 12px 18px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            background: rgba(255, 255, 255, 0.5);
-            font-size: 15px;
-            outline: none;
-        }
-
-        .input-area input:focus {
-            border-color: #1e88e5;
-            background: rgba(255, 255, 255, 0.85);
-        }
-
-        .input-area button {
-            padding: 12px 28px;
-            border-radius: 40px;
-            border: none;
-            background: #1e88e5;
-            color: white;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-            box-shadow: 0 4px 16px rgba(30, 136, 229, 0.2);
-        }
-
-        .input-area button:hover {
-            background: #1565c0;
-            transform: scale(1.02);
-        }
-
-        @media (max-width: 520px) {
-            .chat-header {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .online-badge {
-                font-size: 12px;
-                padding: 4px 12px;
-            }
-            .input-area {
-                flex-wrap: wrap;
-            }
-            .input-area button {
-                flex: 1;
-            }
-            #auth .input-group {
-
-flex-direction: column;
-            }
-            #auth .btn-group {
-                flex-direction: column;
-            }
-        }
+@media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
     </style>
 </head>
 <body>
+<div class="chat-card">
 
-    <div class="chat-card">
-
-        <!-- ===== АВТОРИЗАЦИЯ ===== -->
-        <div id="auth">
-            <h2>💬  Вход в чат</h2>
-            <div class="input-group">
-                <input id="loginUsername" placeholder="👤  Имя пользователя" />
-                <input id="loginPassword" type="password" placeholder="🔑  Пароль" />
-            </div>
-            <div class="btn-group">
-                <button class="btn-login" onclick="login()">Войти</button>
-                <button class="btn-register" onclick="register()">Зарегистрироваться</button>
-            </div>
-            <div id="authError" class="auth-error"></div>
-            <div id="authSuccess" class="auth-success"></div>
+    <!-- АВТОРИЗАЦИЯ -->
+    <div id="auth">
+        <h2>💬  Вход в чат</h2>
+        <input id="loginUsername" placeholder="👤  Имя пользователя" />
+        <input id="loginPassword" type="password" placeholder="🔑  Пароль" />
+        <div class="btn-group">
+            <button class="btn-login" onclick="login()">Войти</button>
+            <button class="btn-register" onclick="register()">Зарегистрироваться</button>
         </div>
-
-        <!-- ===== ЧАТ ===== -->
-        <div id="chat-area">
-            <!-- ХЕДЕР -->
-            <div class="chat-header">
-                <h1>💬  Чат <span>Beta</span></h1>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <span class="user-info" id="userNameDisplay">👤  Аноним</span>
-                    <div class="online-badge" id="onlineBadge">🟢  Онлайн: 0</div>
-                    <button onclick="logout()" style="background:#d32f2f; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">Выйти</button>
-                </div>
-            </div>
-
-            <!-- КОМНАТЫ -->
-            <div class="room-bar">
-                <button class="room-btn active" data-room="Общий">🏠 Общий</button>
-                <button class="room-btn" data-room="Работа">💼  Работа</button>
-                <button class="room-btn" data-room="Друзья">🎮 Друзья</button>
-                <div class="room-input-group">
-                    <input id="roomInput" placeholder="Новая комната..." />
-                    <button id="createRoomBtn">➕</button>
-                </div>
-            </div>
-
-            <!-- СООБЩЕНИЯ -->
-            <div class="messages" id="messages"></div>
-
-            <!-- ВВОД -->
-            <div class="input-area">
-                <input id="messageInput" placeholder="Напишите сообщение..." />
-                <button id="sendBtn">📤 Отправить</button>
-            </div>
-        </div>
-
+        <div class="auth-error" id="authError"></div>
+        <div class="auth-success" id="authSuccess"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js">
-    </script>
+    <!-- ЧАТ -->
+    <div id="chat-area">
+        <div class="chat-header">
+            <h1>💬  Чат <span>Beta</span></h1>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span class="user-info" id="userNameDisplay">👤  Аноним</span>
+                <span class="user-role" id="userRoleDisplay">👤  User</span>
+                <div class="online-badge" id="onlineBadge">🟢  Онлайн: 0</div>
+                <button id="adminToggleBtn" onclick="toggleAdminPanel()" style="display:none; background:#6c5ce7; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">🛡️  Админ</button>
+                <button onclick="logout()" style="background:#d32f2f; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">Выйти</button>
+            </div>
+        </div>
 
-    <script>
-        // =========================================================
-        // 1. ПЕРЕМЕННЫЕ
-        // =========================================================
+        <div class="room-bar">
+            <button class="room-btn active" data-room="Общий">🏠 Общий</button>
+            <button class="room-btn" data-room="Работа">💼  Работа</button>
+            <button class="room-btn" data-room="Друзья">🎮 Друзья</button>
+            <div class="room-input-group">
+                <input id="roomInput" placeholder="Новая комната..." />
+                <button id="createRoomBtn">➕</button>
+            </div>
+        </div>
 
-        const BASE_URL = window.location.origin;
-        let token = localStorage.getItem('chatToken') || '';
-        let username = localStorage.getItem('chatUsername') || '';
-        let currentRoom = 'Общий';
-        let connection = null;
+        <!-- АДМИН-ПАНЕЛЬ -->
+        <div id="adminPanel" class="admin-panel">
+            <h4 style="margin:0 0 10px 0; color:#6c5ce7;">🛡️  Админ-панель</h4>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                <button onclick="adminGetUsers()" class="admin-btn">👥  Пользователи</button>
+                <button onclick="adminGetRooms()" class="admin-btn">🏠 Комнаты</button>
+                <button onclick="adminGetStats()" class="admin-btn">📊  Статистика</button>
+            </div>
+            <div id="adminContent" style="font-size:14px; max-height:200px; overflow-y:auto;">
+                <p style="color:#888;">Нажмите кнопку для загрузки данных</p>
+            </div>
+        </div>
 
-        const authDiv = document.getElementById('auth');
-        const chatArea = document.getElementById('chat-area');
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const onlineBadge = document.getElementById('onlineBadge');
-        const userNameDisplay = document.getElementById('userNameDisplay');
-        const authError = document.getElementById('authError');
-        const authSuccess = document.getElementById('authSuccess');
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input id="messageInput" placeholder="Напишите сообщение..." />
+            <button id="sendBtn">📤 Отправить</button>
+        </div>
+    </div>
+</div>
 
-        // =========================================================
-        // 2. АВТОРИЗАЦИЯ
-        // =========================================================
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    // =========================================================
+    // 1. ПЕРЕМЕННЫЕ
+    // =========================================================
+    const BASE_URL = window.location.origin;
+    let token = localStorage.getItem('chatToken') || '';
+    let username = localStorage.getItem('chatUsername') || '';
+    let currentRoom = 'Общий';
+    let connection = null;
 
-        async function login() {
-            const usernameVal = document.getElementById('loginUsername').value.trim();
-            const passwordVal = document.getElementById('loginPassword').value.trim();
+    const authDiv = document.getElementById('auth');
+    const chatArea = document.getElementById('chat-area');
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const onlineBadge = document.getElementById('onlineBadge');
 
-            if (!usernameVal || !passwordVal) {
-                authError.textContent = '❌ Заполните все поля!';
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const authError = document.getElementById('authError');
+    const authSuccess = document.getElementById('authSuccess');
 
-return;
-            }
-
-            try {
-                const res = await fetch(`${BASE_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ UserName: usernameVal, Password: passwordVal })
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.isSucces) {
-                    token = data.data.token;
-                    username = data.data.userName;
-                    localStorage.setItem('chatToken', token);
-                    localStorage.setItem('chatUsername', username);
-                    authError.textContent = '';
-                    authSuccess.textContent = '✅ Вход выполнен!';
-                    showChat();
-                } else {
-                    authError.textContent = '❌ ' + (data.error || 'Неверный логин или пароль');
-                }
-            } catch (err) {
-                authError.textContent = '❌ Ошибка подключения к серверу';
-                console.error(err);
-            }
-        }
-
-        async function register() {
-            const usernameVal = document.getElementById('loginUsername').value.trim();
-            const passwordVal = document.getElementById('loginPassword').value.trim();
-
-            if (!usernameVal || !passwordVal) {
-                authError.textContent = '❌ Заполните все поля!';
-                return;
-            }
-
-            try {
-                const res = await fetch(`${BASE_URL}/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ UserName: usernameVal, Password: passwordVal, Email: usernameVal + '@chat.com' })
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.isSucces) {
-                    token = data.data.token;
-                    username = data.data.userName;
-                    localStorage.setItem('chatToken', token);
-                    localStorage.setItem('chatUsername', username);
-                    authError.textContent = '';
-                    authSuccess.textContent = '✅ Регистрация выполнена!';
-                    showChat();
-                } else {
-                    authError.textContent = '❌ ' + (data.error || 'Ошибка регистрации');
-                }
-            } catch (err) {
-                authError.textContent = '❌ Ошибка подключения к серверу';
-                console.error(err);
-            }
-        }
-
-        function logout() {
-            token = '';
-            username = '';
-            localStorage.removeItem('chatToken');
-            localStorage.removeItem('chatUsername');
-            if (connection) {
-                connection.stop();
-                connection = null;
-            }
-            chatArea.classList.remove('active');
-            authDiv.style.display = 'flex';
-            authSuccess.textContent = '';
-            authError.textContent = '';
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-        }
-
-        // =========================================================
-        // 3. ПОКАЗАТЬ ЧАТ
-        // =========================================================
-
-        function showChat() {
-            authDiv.style.display = 'none';
-            chatArea.classList.add('active');
-            userNameDisplay.textContent = '👤  ' + username;
-            connectToHub();
-        }
-
-        // =========================================================
-        // 4. ПОДКЛЮЧЕНИЕ К ХАБУ
-        // =========================================================
-
-        async function connectToHub() {
-            if (connection) {
-                await connection.stop();
-            }
-
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl(`/chat?access_token=${token}`)
-
-.withAutomaticReconnect()
-                .build();
-
-            // ----- ОБРАБОТЧИКИ -----
-            connection.on('ReceiveMessage', (user, message, messageId) => {
-                appendMessage(user, message, messageId, false, false);
+    // =========================================================
+    // 2. АВТОРИЗАЦИЯ
+    // =========================================================
+    async function login() {
+        const u = document.getElementById('loginUsername').value.trim();
+        const p = document.getElementById('loginPassword').value.trim();
+        if (!u || !p) { authError.textContent = '❌ Заполните все поля!'; return; }
+        try {
+            const res = await fetch(`${BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ UserName: u, Password: p })
             });
-
-            connection.on('ReceiveHistory', (history) => {
-                messagesDiv.innerHTML = '';
-                if (history && history.length) {
-                    history.forEach(msg => {
-                        appendMessage(
-                            msg.userName || msg.username,
-                            msg.content,
-                            msg.id,
-                            msg.isDeleted || false,
-                            msg.isEdited || false
-                        );
-                    });
-                }
-            });
-
-            connection.on('ReceiveOnlineUsers', (users) => {
-                onlineBadge.textContent = `🟢  Онлайн: ${users ? users.length : 0}`;
-            });
-
-            // ===== НОВОЕ: УДАЛЕНИЕ =====
-            connection.on('MessageDeleted', (messageId) => {
-                const msgElement = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (msgElement) {
-                    msgElement.classList.add('deleted');
-                    msgElement.innerHTML = '🗑️  Сообщение удалено';
-                }
-            });
-
-            // ===== НОВОЕ: РЕДАКТИРОВАНИЕ =====
-            connection.on('MessageEdited', (messageId, newContent) => {
-                const msgElement = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (msgElement) {
-                    const contentDiv = msgElement.querySelector('.msg-content');
-                    if (contentDiv) {
-                        contentDiv.textContent = newContent + ' ✏️ ';
-                    }
-                }
-            });
-
-            // ----- ПОДКЛЮЧЕНИЕ -----
-            try {
-                await connection.start();
-                console.log('✅ Подключено к чату!');
-                await connection.invoke('JoinRoom', 'Общий');
-                await connection.invoke('GetHistoryMessagesAsync', 'Общий', 50);
-                await connection.invoke('SendMessageToRoom', `👋  ${username} присоединился!`, 'Общий');
-            } catch (err) {
-                console.error('❌ Ошибка подключения:', err);
-                setTimeout(connectToHub, 3000);
-            }
-        }
-
-        // =========================================================
-        // 5. ОТОБРАЖЕНИЕ СООБЩЕНИЙ
-        // =========================================================
-
-        function appendMessage(user, message, messageId, isDeleted, isEdited) {
-            const div = document.createElement('div');
-            div.classList.add('msg');
-            div.dataset.messageId = messageId;
-
-            if (isDeleted) {
-                div.classList.add('deleted');
-                div.innerHTML = '🗑️  Сообщение удалено';
-                messagesDiv.appendChild(div);
-                return;
-            }
-
-            if (user === 'Система') {
-                div.classList.add('system');
-                div.textContent = `📢  ${message}`;
+            const data = await res.json();
+            if (res.ok && data.isSucces) {
+                token = data.data.token;
+                username = data.data.userName;
+                localStorage.setItem('chatToken', token);
+                localStorage.setItem('chatUsername', username);
+                localStorage.setItem('chatRole', data.data.role || 'User');
+                authError.textContent = '';
+                authSuccess.textContent = '✅ Вход выполнен!';
+                showChat();
             } else {
-                const isSelf = user === username;
-                div.classList.add(isSelf ? 'self' : 'other');
-
-                let status = isEdited ? ' ✏️ ' : '';
-
-                let actionsHtml = '';
-                if (isSelf) {
-                    actionsHtml = `
-                        <div class="msg-actions">
-                            <button class="edit-btn" onclick="editMessage(${messageId})">✏️ </button>
-                            <button class="delete-btn" onclick="deleteMessage(${messageId})">🗑️ </button>
-                        </div>
-                    `;
-                }
-
-                div.innerHTML = `
-                    <div class="username">${user}</div>
-                    <div class="msg-content">${message}${status}</div>
-                    ${actionsHtml}
-19:01
-<div class="meta">
-                        <span>${new Date().toLocaleTimeString()}</span>
-                    </div>
-                `;
+                authError.textContent = '❌ ' + (data.error || 'Неверный логин или пароль');
             }
+        } catch (e) { authError.textContent = '❌ Ошибка сервера'; console.error(e); }
+    }
 
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // =========================================================
-        // 6. ОТПРАВКА СООБЩЕНИЯ
-        // =========================================================
-
-        async function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text || !connection) return;
-
-            try {
-                await connection.invoke('SendMessageToRoom', text, currentRoom);
-                messageInput.value = '';
-            } catch (err) {
-                console.error('❌ Ошибка отправки:', err);
-            }
-        }
-
-        // =========================================================
-        // 7. СМЕНА КОМНАТЫ
-        // =========================================================
-
-        async function switchRoom(room) {
-            if (room === currentRoom || !connection) return;
-
-            try {
-                await connection.invoke('JoinRoom', room);
-                currentRoom = room;
-                messagesDiv.innerHTML = '';
-                await connection.invoke('GetHistoryMessagesAsync', room, 50);
-
-                document.querySelectorAll('.room-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.room === room);
-                });
-
-            } catch (err) {
-                console.error('❌ Ошибка смены комнаты:', err);
-            }
-        }
-
-        // =========================================================
-        // 8. УДАЛЕНИЕ И РЕДАКТИРОВАНИЕ
-        // =========================================================
-
-        async function deleteMessage(messageId) {
-            if (!confirm('Удалить это сообщение?')) return;
-            try {
-                await connection.invoke('DeleteMessage', messageId);
-                console.log('🗑️  Запрос на удаление отправлен');
-            } catch (err) {
-                console.error('❌ Ошибка удаления:', err);
-                alert('Не удалось удалить сообщение');
-            }
-        }
-
-        async function editMessage(messageId) {
-            const newText = prompt('Введите новый текст сообщения:');
-            if (newText === null || newText.trim() === '') return;
-            try {
-                await connection.invoke('EditMessage', messageId, newText.trim());
-                console.log('✏️  Запрос на редактирование отправлен');
-            } catch (err) {
-                console.error('❌ Ошибка редактирования:', err);
-                alert('Не удалось отредактировать сообщение');
-            }
-        }
-
-        // =========================================================
-        // 9. СОБЫТИЯ КНОПОК
-        // =========================================================
-
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        document.querySelectorAll('.room-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                switchRoom(btn.dataset.room);
+    async function register() {
+        const u = document.getElementById('loginUsername').value.trim();
+        const p = document.getElementById('loginPassword').value.trim();
+        if (!u || !p) { authError.textContent = '❌ Заполните все поля!'; return; }
+        try {
+            const res = await fetch(`${BASE_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ UserName: u, Password: p, Email: u + '@chat.com' })
             });
+            const data = await res.json();
+            if (res.ok && data.isSucces) {
+                token = data.data.token;
+                username = data.data.userName;
+                localStorage.setItem('chatToken', token);
+                localStorage.setItem('chatUsername', username);
+                localStorage.setItem('chatRole', data.data.role || 'User');
+                authError.textContent = '';
+                authSuccess.textContent = '✅ Регистрация выполнена!';
+                showChat();
+            } else {
+                authError.textContent = '❌ ' + (data.error || 'Ошибка регистрации');
+            }
+        } catch (e) { authError.textContent = '❌ Ошибка сервера'; console.error(e); }
+    }
+
+    function logout() {
+        token = ''; username = '';
+        localStorage.removeItem('chatToken');
+        localStorage.removeItem('chatUsername');
+        if (connection) { connection.stop(); connection = null; }
+        chatArea.classList.remove('active');
+        authDiv.style.display = 'flex';
+    }
+
+    function showChat() {
+    authDiv.style.display = 'none';
+    chatArea.classList.add('active');
+    userNameDisplay.textContent = '👤  ' + username;
+    
+    const role = localStorage.getItem('chatRole') || 'User';
+
+    if (role === 'Admin') {
+        document.getElementById('adminToggleBtn').style.display = 'inline-block';
+        document.getElementById('userRoleDisplay').textContent = '🛡️  Admin';
+    } 
+    
+    else {
+        document.getElementById('userRoleDisplay').style.display = 'none';
+        document.getElementById('userRoleDisplay').textContent = '👤  User';
+    }
+    
+    connectToHub();
+}
+
+    // =========================================================
+    // 3. ПРОВЕРКА РОЛИ И АДМИН-ПАНЕЛЬ
+    // =========================================================
+    function toggleAdminPanel() {
+        const panel = document.getElementById('adminPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+
+    async function adminGetUsers() {
+        const role = localStorage.getItem('chatRole') || 'User';
+        if (role != 'Admin') {
+            alert('Нет прав!');
+            return;
+        }
+
+        const content = document.getElementById('adminContent');
+        content.innerHTML = '⏳ Загрузка...';
+        try {
+            const res = await fetch('/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
+            const users = await res.json();
+            if (res.ok) {
+                let html = '<table><tr><th>ID</th><th>Имя</th><th>Роль</th><th>Действия</th></tr>';
+                users.forEach(u => {
+                    html += `<tr>
+                        <td>${u.id}</td>
+                        <td>${u.userName}</td>
+                        <td>${u.role}</td>
+                        <td>
+                            <button onclick="adminChangeRole(${u.id},'Admin')" class="admin-btn" style="font-size:11px;padding:2px 8px;">Admin</button>
+                            <button onclick="adminChangeRole(${u.id},'User')" class="admin-btn" style="font-size:11px;padding:2px 8px;">User</button>
+                            <button onclick="adminDeleteUser(${u.id})" class="admin-btn danger" style="font-size:11px;padding:2px 8px;">🗑️ </button>
+                        </td>
+                    </tr>`;
+                });
+                html += '</table>';
+                content.innerHTML = html;
+            } else content.innerHTML = '❌ Ошибка';
+        } catch (e) { content.innerHTML = '❌ ' + e; }
+    }
+
+    async function adminGetRooms() {
+        const content = document.getElementById('adminContent');
+        content.innerHTML = '⏳ Загрузка...';
+        try {
+            const res = await fetch('/admin/rooms', { headers: { 'Authorization': 'Bearer ' + token } });
+            const rooms = await res.json();
+            if (res.ok) {
+                let html = '<table><tr><th>Название</th><th>Сообщений</th><th>Действия</th></tr>';
+                rooms.forEach(r => {
+                    html += `<tr>
+                        <td>${r.name}</td>
+                        <td>${r.messageCount}</td>
+                        <td>
+                            <button onclick="adminClearRoom('${r.name}')" class="admin-btn" style="font-size:11px;padding:2px 8px;">🧹 </button>
+                            <button onclick="adminDeleteRoom('${r.name}')" class="admin-btn danger" style="font-size:11px;padding:2px 8px;">🗑️ </button>
+                        </td>
+                    </tr>`;
+                });
+                html += '</table>';
+                content.innerHTML = html;
+            } else content.innerHTML = '❌ Ошибка';
+        } catch (e) { content.innerHTML = '❌ ' + e; }
+    }
+
+    async function adminGetStats() {
+        const content = document.getElementById('adminContent');
+        content.innerHTML = '⏳ Загрузка...';
+        try {
+            const res = await fetch('/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+            const stats = await res.json();
+            if (res.ok) {
+                content.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div style="background:#e3f2fd;padding:12px;border-radius:8px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;">${stats.totalUsers}</div>
+                            <div style="font-size:12px;color:#666;">Пользователей</div>
+                        </div>
+                        <div style="background:#e8f5e9;padding:12px;border-radius:8px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;">${stats.totalRooms}</div>
+                            <div style="font-size:12px;color:#666;">Комнат</div>
+                        </div>
+                        <div style="background:#fff3e0;padding:12px;border-radius:8px;text-align:center;">
+14:07
+<div style="font-size:24px;font-weight:bold;">${stats.totalMessages}</div>
+                            <div style="font-size:12px;color:#666;">Сообщений</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px;text-align:center;font-size:14px;color:#888;">Сегодня: ${stats.todayMessages} сообщений</div>
+                `;
+            } else content.innerHTML = '❌ Ошибка';
+        } catch (e) { content.innerHTML = '❌ ' + e; }
+    }
+
+    async function adminChangeRole(userId, newRole) {
+        if (!confirm(`Сменить роль на ${newRole}?`)) return;
+        try {
+            await fetch(`/admin/users/${userId}/role?newRole=${newRole}`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            alert('✅ Готово');
+            adminGetUsers();
+        } catch (e) { alert('❌ Ошибка'); }
+    }
+
+    async function adminDeleteUser(userId) {
+        if (!confirm('Удалить пользователя?')) return;
+        try {
+            await fetch(`/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            alert('✅ Удалён');
+            adminGetUsers();
+        } catch (e) { alert('❌ Ошибка'); }
+    }
+
+    async function adminClearRoom(roomName) {
+        if (!confirm(`Очистить "${roomName}"?`)) return;
+        try {
+            await fetch(`/admin/rooms/${roomName}/clear`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            alert('✅ Очищено');
+            adminGetRooms();
+        } catch (e) { alert('❌ Ошибка'); }
+    }
+
+    async function adminDeleteRoom(roomName) {
+        if (!confirm(`Удалить "${roomName}"?`)) return;
+        try {
+            await fetch(`/admin/rooms/${roomName}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            alert('✅ Удалена');
+            adminGetRooms();
+        } catch (e) { alert('❌ Ошибка'); }
+    }
+
+    // =========================================================
+    // 4. ПОДКЛЮЧЕНИЕ К ХАБУ
+    // =========================================================
+    async function connectToHub() {
+        if (connection) { await connection.stop(); }
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(`/chat?access_token=${token}`)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('ReceiveMessage', (user, msg, id) => {
+            appendMessage(user, msg, id || 0, false, false);
         });
 
-        document.getElementById('createRoomBtn').addEventListener('click', () => {
-            const name = document.getElementById('roomInput').value.trim();
-            if (name) {
-                // Создаём кнопку для новой комнаты
-                const newBtn = document.createElement('button');
-                newBtn.classList.add('room-btn');
-                newBtn.dataset.room = name;
-                newBtn.textContent = '🏠 ' + name;
-                newBtn.addEventListener('click', () => {
-                    switchRoom(name);
+        connection.on('ReceiveHistory', (history) => {
+            messagesDiv.innerHTML = '';
+            if (history && history.length) {
+                history.forEach(m => {
+                    appendMessage(m.userName || m.username, m.content, m.id || 0, m.isDeleted || false, m.isEdited || false);
                 });
-                document.querySelector('.room-bar').insertBefore(newBtn, document.querySelector('.room-input-group'));
-
-switchRoom(name);
-                document.getElementById('roomInput').value = '';
             }
         });
 
-        document.getElementById('roomInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') document.getElementById('createRoomBtn').click();
+        connection.on('ReceiveOnlineUsers', (users) => {
+            onlineBadge.textContent = `🟢  Онлайн: ${users ? users.length : 0}`;
         });
 
-        // Enter для полей авторизации
-        document.getElementById('loginPassword').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') login();
+        connection.on('MessageDeleted', (id) => {
+            const el = document.querySelector(`[data-id="${id}"]`);
+            if (el) { el.innerHTML = '🗑️  Сообщение удалено'; el.style.opacity = '0.5'; }
         });
 
-        document.getElementById('loginUsername').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') login();
+        connection.on('MessageEdited', (id, newText) => {
+            const el = document.querySelector(`[data-id="${id}"]`);
+            if (el) {
+                const content = el.querySelector('.msg-text');
+                if (content) content.textContent = newText + ' ✏️ ';
+            }
         });
 
-        // =========================================================
-        // 10. СТАРТ
-        // =========================================================
+        try {
+            await connection.start();
+            console.log('✅ Подключено');
+            await connection.invoke('JoinRoom', 'Общий');
+            await connection.invoke('GetHistoryMessagesAsync', 'Общий', 50);
 
-        if (token && username) {
-            showChat();
-        } else {
-            authDiv.style.display = 'flex';
+await connection.invoke('SendMessageToRoom', '👋  ' + username + ' присоединился!', 'Общий');
+        } catch (e) {
+            console.error('❌ Ошибка:', e);
+            setTimeout(connectToHub, 3000);
         }
-    </script>
+    }
 
+    // =========================================================
+    // 5. ОТОБРАЖЕНИЕ СООБЩЕНИЙ
+    // =========================================================
+    function appendMessage(user, msg, id, isDeleted, isEdited) {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.dataset.id = id;
+
+        if (isDeleted) {
+            div.innerHTML = '🗑️  Сообщение удалено';
+            div.style.opacity = '0.5';
+            messagesDiv.appendChild(div);
+            return;
+        }
+
+        if (user === 'Система') {
+            div.classList.add('system');
+            div.textContent = '📢  ' + msg;
+            messagesDiv.appendChild(div);
+            return;
+        }
+
+        const isSelf = user === username;
+        div.classList.add(isSelf ? 'self' : 'other');
+
+        let content = `
+            <div class="username">${user}</div>
+            <div class="msg-text">${msg}${isEdited ? ' ✏️ ' : ''}</div>
+            <div class="meta">${new Date().toLocaleTimeString()}</div>
+        `;
+
+        if (isSelf) {
+            const actions = document.createElement('div');
+            actions.className = 'msg-actions';
+
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✏️ ';
+            editBtn.onclick = () => {
+                const newText = prompt('Новый текст:');
+                if (newText && newText.trim()) {
+                    connection.invoke('EditMessage', id, newText.trim());
+                }
+            };
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '🗑️ ';
+            delBtn.onclick = () => {
+                if (confirm('Удалить?')) connection.invoke('DeleteMessage', id);
+            };
+
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+            div.innerHTML = content;
+            div.appendChild(actions);
+        } else {
+            div.innerHTML = content;
+        }
+
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // =========================================================
+    // 6. ОТПРАВКА СООБЩЕНИЯ
+    // =========================================================
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !connection) return;
+        try {
+            await connection.invoke('SendMessageToRoom', text, currentRoom);
+            messageInput.value = '';
+        } catch (e) { console.error(e); }
+    }
+
+    // =========================================================
+    // 7. КОМНАТЫ
+    // =========================================================
+    async function switchRoom(room) {
+        if (room === currentRoom || !connection) return;
+        try {
+            await connection.invoke('JoinRoom', room);
+            currentRoom = room;
+            messagesDiv.innerHTML = '';
+            await connection.invoke('GetHistoryMessagesAsync', room, 50);
+            document.querySelectorAll('.room-btn').forEach(b => b.classList.toggle('active', b.dataset.room === room));
+        } catch (e) { console.error(e); }
+    }
+
+    document.querySelectorAll('.room-btn').forEach(b => b.addEventListener('click', () => switchRoom(b.dataset.room)));
+    document.getElementById('createRoomBtn').addEventListener('click', () => {
+        const name = document.getElementById('roomInput').value.trim();
+        if (!name) return;
+        const btn = document.createElement('button');
+        btn.className = 'room-btn active';
+        btn.dataset.room = name;
+        btn.textContent = '🏠 ' + name;
+        btn.addEventListener('click', () => switchRoom(name));
+
+document.querySelector('.room-bar').insertBefore(btn, document.querySelector('.room-input-group'));
+        switchRoom(name);
+        document.getElementById('roomInput').value = '';
+    });
+    document.getElementById('roomInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('createRoomBtn').click(); });
+    document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('loginUsername').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+    // =========================================================
+    // 8. СТАРТ
+    // =========================================================
+    if (token && username) showChat();
+    else authDiv.style.display = 'flex';
+</script>
 </body>
 </html>
