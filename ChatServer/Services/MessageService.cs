@@ -47,7 +47,9 @@ public class MessageService : IMessageService
           Content = content,
           UserId = userId,
           RoomId = room.Id,
-          SentAt = DateTime.UtcNow  
+          SentAt = DateTime.UtcNow,
+          IsDeleted = false,
+          IsEdited = false  
         };
 
         await _db.Messages.AddAsync(message);
@@ -64,7 +66,9 @@ public class MessageService : IMessageService
            Id = message.Id,
            UserName = username,
            Content = content,
-           SentAt = message.SentAt 
+           SentAt = message.SentAt,
+           IsDeleted = false,
+           IsEdited = false 
         });
     }
 
@@ -107,43 +111,59 @@ public class MessageService : IMessageService
 
     public async Task<ServiceResult<bool>> DeleteMessageAsync(int messageId, int userId, bool isAdmin)
     {
-        _logger.LogInformation($"Запрос на удаление сообщения {messageId} пользователя {userId}");
-        
-        var message = await _db.Messages.FindAsync(messageId);
-        if (message is null) {return ServiceResult<bool>.Failure("Сообщения с таким ID не найдено!");}
+        try
+       { 
+            _logger.LogInformation($"Запрос на удаление сообщения {messageId} пользователя {userId}");
 
-        if (message.UserId != userId && !isAdmin){
-            _logger.LogWarning("Запрос отклонен, так как доступно только для админа!");
-            return ServiceResult<bool>.Success(false);
-        }
+            var message = await _db.Messages.FindAsync(messageId);
+            if (message is null) {return ServiceResult<bool>.Success(false);}
 
-        message.IsDeleted = true;
-        message.DeletedAt = DateTime.UtcNow;
+            if (message.UserId != userId && !isAdmin){
+                _logger.LogWarning("Запрос отклонен, так как доступно только для админа!");
+                return ServiceResult<bool>.Success(false);
+            }
 
-        await _db.SaveChangesAsync();
+            message.IsDeleted = true;
+            message.DeletedAt = DateTime.UtcNow;
 
-        _logger.LogInformation($"Сообщение {messageId} удалено!");
-        return ServiceResult<bool>.Success(true);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"Сообщение {messageId} удалено!");
+            return ServiceResult<bool>.Success(true);
+       }
+
+       catch (Exception ex)
+       {
+            return ServiceResult<bool>.Failure(ex.Message);
+       }
     }
 
 
     public async Task<ServiceResult<bool>> EditMessageAsync(int messageId, int userId, string newContent)
     {
-        _logger.LogInformation($"Запрос на редактирование сообщения {messageId} от пользователя {userId}");
+        try
+        {
+            _logger.LogInformation($"Запрос на редактирование сообщения {messageId} от пользователя {userId}");
 
-        var message = await _db.Messages.FindAsync(messageId);
-        if (message is null) {return ServiceResult<bool>.Failure("Сообщения с таким ID не найдено!");}
+            var message = await _db.Messages.FindAsync(messageId);
+            if (message is null) {return ServiceResult<bool>.Success(false);}
 
-        if (message.UserId != userId) {
-            _logger.LogWarning("Запрос отклонен, так как редактирование доступно только автору сообщения!");
-            return ServiceResult<bool>.Success(false);
+            if (message.UserId != userId) {
+                _logger.LogWarning("Запрос отклонен, так как редактирование доступно только автору сообщения!");
+                return ServiceResult<bool>.Success(false);
+            }
+
+            message.Content = newContent;
+            message.IsEdited = true;
+            message.EditedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return ServiceResult<bool>.Success(true);
         }
 
-        message.Content = newContent;
-        message.IsEdited = true;
-        message.EditedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-        return ServiceResult<bool>.Success(true);
+        catch(Exception ex)
+        {
+            return ServiceResult<bool>.Failure(ex.Message);
+        }
     }
 }
