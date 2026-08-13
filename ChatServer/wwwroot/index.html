@@ -72,7 +72,16 @@
         .admin-panel th { background: #f0f0f0; padding: 6px; text-align: left; }
         .admin-panel td { padding: 6px; border-bottom: 1px solid #eee; }
 
-@media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
+        #typingIndicator {
+        padding: 4px 20px;
+        font-size: 14px;
+        color: #888;
+        min-height: 24px;
+        font-style: italic;
+        transition: all 0.3s ease;
+        }
+
+        @media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
     </style>
 </head>
 <body>
@@ -112,7 +121,7 @@
                 <input id="roomInput" placeholder="Новая комната..." />
                 <button id="createRoomBtn">➕</button>
             </div>
-        </div>
+    </div>
 
         <!-- АДМИН-ПАНЕЛЬ -->
         <div id="adminPanel" class="admin-panel">
@@ -128,6 +137,7 @@
         </div>
 
         <div class="messages" id="messages"></div>
+        <div id="typingIndicator" style="padding: 4px 20px; font-size: 14px; color: #888; min-height: 24px; font-style: italic;"></div>
         <div class="input-area">
             <input id="messageInput" placeholder="Напишите сообщение..." />
             <button id="sendBtn">📤 Отправить</button>
@@ -156,6 +166,9 @@
     const userNameDisplay = document.getElementById('userNameDisplay');
     const authError = document.getElementById('authError');
     const authSuccess = document.getElementById('authSuccess');
+
+    let typingTimeout = null;
+    let typingUsers = {};
 
     // =========================================================
     // 2. АВТОРИЗАЦИЯ
@@ -324,8 +337,8 @@
                             <div style="font-size:12px;color:#666;">Комнат</div>
                         </div>
                         <div style="background:#fff3e0;padding:12px;border-radius:8px;text-align:center;">
-14:07
-<div style="font-size:24px;font-weight:bold;">${stats.totalMessages}</div>
+
+                        <div style="font-size:24px;font-weight:bold;">${stats.totalMessages}</div>
                             <div style="font-size:12px;color:#666;">Сообщений</div>
                         </div>
                     </div>
@@ -395,6 +408,17 @@
 
         connection.on('ReceiveMessage', (user, msg, id) => {
             appendMessage(user, msg, id || 0, false, false);
+            
+            // ========= Уведомления + звук =======
+            if (user != username) {
+                const sound = document.getElementById('notificationSound');
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(() => {});
+                }
+
+                showNotification(`💬 Новое сообщение от ${user}`, msg)
+            }
         });
 
         connection.on('ReceiveHistory', (history) => {
@@ -423,16 +447,50 @@
             }
         });
 
+        connection.on("UserTyping", (user) => {
+            typingUsers[user] = true;
+            updateTypingIndicator();
+        });
+
+        connection.on("UserStoppedTyping", (user) => {
+            delete typingUsers[user];
+            updateTypingIndicator();
+        });
+
         try {
             await connection.start();
             console.log('✅ Подключено');
             await connection.invoke('JoinRoom', 'Общий');
             await connection.invoke('GetHistoryMessagesAsync', 'Общий', 50);
 
-await connection.invoke('SendMessageToRoom', '👋  ' + username + ' присоединился!', 'Общий');
+            await connection.invoke('SendMessageToRoom', '👋  ' + username + ' присоединился!', 'Общий');
         } catch (e) {
             console.error('❌ Ошибка:', e);
             setTimeout(connectToHub, 3000);
+        }
+    }
+
+
+    // ============ Функция печатания сообщений ==========
+    function updateTypingIndicator() {
+        const typingDiv = document.getElementById('typingIndicator');
+        const users = Object.keys(typingUsers);
+
+        if (users.length == 0) {
+            typingDiv.textContent = '';
+            return;
+        }
+
+        if (users.length == 1) {
+            typingDiv.textContent = `✍️ ${users[0]} печатает...`;
+        }
+
+        else if (users.length == 2) {
+            typingDiv.textContent = `✍️ ${users[0]} и ${users[1]} печатают...`;
+        }
+
+        else {
+            typingDiv.textContent = `✍️ ${users.length} печатают...`;
         }
     }
 
@@ -533,16 +591,47 @@ await connection.invoke('SendMessageToRoom', '👋  ' + username + ' присо�
         btn.textContent = '🏠 ' + name;
         btn.addEventListener('click', () => switchRoom(name));
 
-document.querySelector('.room-bar').insertBefore(btn, document.querySelector('.room-input-group'));
+    document.querySelector('.room-bar').insertBefore(btn, document.querySelector('.room-input-group'));
         switchRoom(name);
         document.getElementById('roomInput').value = '';
     });
+
     document.getElementById('roomInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('createRoomBtn').click(); });
     document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
     document.getElementById('loginUsername').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
     sendBtn.addEventListener('click', sendMessage);
+
+    // =========== ВВОД СООБЩЕНИЯ ===================
     messageInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+    // ============= ПЕЧАТАЕТ ==============
+    let typingTimer = null;
+    const TYPING_TIMEOUT = 1500;
+
+    messageInput.addEventListener('input', function() {
+        if (!connection) return;
+        connection.invoke('UserTyping', currentRoom);
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            connection.invoke("UserStoppedTyping", currentRoom);
+        }, TYPING_TIMEOUT)
+    });
+
+    // =============== УВЕДОМЛЕНИЯ ===============
+    function showNotification(title, body) {
+        if (!('Notification' in window)) return;
+
+        if (Notification.permission == 'granted')
+            new Notification(title, {
+                body: body,
+                icon: 'https://cdn-icons-png.flatication.com/512/4712/4712101.png'
+        });
+
+        else if (Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
+    }
 
     // =========================================================
     // 8. СТАРТ
@@ -550,5 +639,9 @@ document.querySelector('.room-bar').insertBefore(btn, document.querySelector('.r
     if (token && username) showChat();
     else authDiv.style.display = 'flex';
 </script>
+ <!--Уведомления-->>
+        <audio id="notificationSound" preload="auto">
+            <source src ="sounds/notificationSound.mp3" type="audio/mp3">
+        </audio>
 </body>
 </html>
