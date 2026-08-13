@@ -8,6 +8,8 @@ using IRoomServiceModel;
 using FluentValidation;
 using ValidatorModel;
 
+using SearchMessageModel;
+
 
 namespace ChatHubs;
 
@@ -72,6 +74,43 @@ public class ChatHub : Hub
         await SendOnlineUsers();
 
         await base.OnDisconnectedAsync(ex);
+    }
+
+
+    // ========== Метод для поиска сообщений ================
+    public async Task SearchMessages(SearchMessageDto request)
+    {
+        var userName = GetUserName() ?? "Аноним";
+
+        if (string.IsNullOrWhiteSpace(request.RoomName)) request.RoomName = "Общий";
+        if (string.IsNullOrWhiteSpace(request.Query))
+        {
+            await Clients.Caller.SendAsync("ReceiveMessage", "Система", "❌ Введите текст для поиска сообщений!");
+            return;
+        }
+
+        _logger.LogInformation($"🔍 {userName} ищет '{request.Query}' в комнате {request.RoomName}");
+        var result = await _messageService.SearchMessagesAsync(request);
+
+        if (result.IsSucces) {
+            await Clients.Caller.SendAsync("SearchResults", result.Data);
+        }
+
+        else {
+            await Clients.Caller.SendAsync("SearchResults", result.Error);
+        }
+    }
+
+
+    // ========= Методы для "печатания" сообщений =============
+    public async Task UserTyping(string roomName) {
+        var userName = GetUserName() ?? "Аноним";
+        await Clients.OthersInGroup(roomName).SendAsync("UserTyping", userName);
+    }
+
+    public async Task UserStoppedTyping(string roomName) {
+        var userName = GetUserName() ?? "Аноним";
+        await Clients.OthersInGroup(roomName).SendAsync("UserStoppedTyping", userName);
     }
 
 
@@ -146,8 +185,8 @@ public class ChatHub : Hub
         if (string.IsNullOrEmpty(message)) return;
         if (string.IsNullOrEmpty(roomName)) roomName = "Общий";
 
-        await _messageService.SaveMessageAsync(userName, userId, roomName, message);
-        await Clients.Group(roomName).SendAsync("ReceiveMessage", userName, message);
+        var saved = await _messageService.SaveMessageAsync(userName, userId, roomName, message);
+        await Clients.Group(roomName).SendAsync("ReceiveMessage", userName, message, saved?.Data?.Id);
 
         _logger.LogInformation($"[{roomName}] {userName} : {message}");
     }
