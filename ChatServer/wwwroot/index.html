@@ -72,6 +72,148 @@
         .admin-panel th { background: #f0f0f0; padding: 6px; text-align: left; }
         .admin-panel td { padding: 6px; border-bottom: 1px solid #eee; }
 
+        /* ===== ТЁМНАЯ ТЕМА ===== */
+        body.dark-mode {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        body.dark-mode .chat-card {
+            background: rgba(30, 30, 50, 0.85);
+            backdrop-filter: blur(16px);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        body.dark-mode .chat-header {
+            background: rgba(20, 20, 40, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .chat-header h1 {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .user-info,
+        body.dark-mode .user-role {
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+        }
+
+        body.dark-mode .online-badge {
+            background: #1b5e20;
+        }
+
+        body.dark-mode .room-bar {
+            background: rgba(20, 20, 40, 0.6);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .room-btn {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.1);
+            color: #ccc;
+        }
+
+        body.dark-mode .room-btn:hover {
+            background: rgba(30, 136, 229, 0.2);
+            border-color: #1e88e5;
+        }
+
+        body.dark-mode .room-btn.active {
+            background: #1e88e5;
+            color: white;
+        }
+
+        body.dark-mode .room-input-group input {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.1);
+            color: #ccc;
+        }
+
+        body.dark-mode .room-input-group input:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #1e88e5;
+        }
+
+        body.dark-mode #messages {
+            background: transparent;
+        }
+
+        body.dark-mode .msg.other {
+            background: rgba(255,255,255,0.08);
+            color: #e0e0e0;
+            border-color: rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .msg.self {
+            background: #1e88e5;
+            color: white;
+        }
+
+        body.dark-mode .msg.system {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffd54f;
+        }
+
+        body.dark-mode .input-area {
+            background: rgba(20, 20, 40, 0.7);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .input-area input {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .input-area input:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #1e88e5;
+        }
+
+        body.dark-mode #auth {
+            background: rgba(20, 20, 40, 0.9);
+        }
+
+        body.dark-mode #auth h2 {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode #auth input {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+        }
+
+        body.dark-mode #auth input:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #1e88e5;
+        }
+
+        body.dark-mode .admin-panel {
+            background: rgba(20, 20, 40, 0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .admin-panel h4 {
+            color: #b39ddb;
+        }
+
+        body.dark-mode .admin-panel table {
+            color: #ccc;
+        }
+
+        body.dark-mode .admin-panel th {
+            background: rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode .admin-panel td {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        body.dark-mode #typingIndicator {
+            color: #888;
+        }
+
         #typingIndicator {
         padding: 4px 20px;
         font-size: 14px;
@@ -109,6 +251,9 @@
                 <span class="user-role" id="userRoleDisplay">👤  User</span>
                 <div class="online-badge" id="onlineBadge">🟢  Онлайн: 0</div>
                 <button id="adminToggleBtn" onclick="toggleAdminPanel()" style="display:none; background:#6c5ce7; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">🛡️  Админ</button>
+                
+                <button id="themeToggleBtn" onclick="toggleTheme()" style="background:transparent; border:none; font-size:20px; cursor:pointer;">🌙 </button>
+                
                 <button onclick="logout()" style="background:#d32f2f; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">Выйти</button>
             </div>
         </div>
@@ -121,7 +266,15 @@
                 <input id="roomInput" placeholder="Новая комната..." />
                 <button id="createRoomBtn">➕</button>
             </div>
-    </div>
+        </div>
+
+        <!-- Поиск сообщений-->
+        <div style="padding: 8px 16px; background: rgba(255,255,255,0.3); border-bottom: 1px solid rgba(255,255,255,0.3); display: flex; gap: 8px; align-items: center;">
+         <input id="searchInput" placeholder="🔍 Поиск по сообщениям..." style="flex:1; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.4); outline: none; font-size: 14px;" />
+         <button onclick="searchMessages()" style="padding: 6px 16px; border-radius: 20px; border: none; background: #1e88e5; color: white; cursor: pointer;">Найти</button>
+         <button onclick="clearSearch()" style="padding: 6px 16px; border-radius: 20px; border: none; background: #888; color: white; cursor: pointer;">✕</button>
+        </div>
+
 
         <!-- АДМИН-ПАНЕЛЬ -->
         <div id="adminPanel" class="admin-panel">
@@ -147,9 +300,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script>
-    // =========================================================
-    // 1. ПЕРЕМЕННЫЕ
-    // =========================================================
+
+
+    //============================== ПЕРЕМЕННЫЕ ==============================
     const BASE_URL = window.location.origin;
     let token = localStorage.getItem('chatToken') || '';
     let username = localStorage.getItem('chatUsername') || '';
@@ -170,9 +323,10 @@
     let typingTimeout = null;
     let typingUsers = {};
 
-    // =========================================================
-    // 2. АВТОРИЗАЦИЯ
-    // =========================================================
+    let searcResults = [];
+
+
+    // ============================= АВТОРИЗАЦИЯ =============================
     async function login() {
         const u = document.getElementById('loginUsername').value.trim();
         const p = document.getElementById('loginPassword').value.trim();
@@ -457,6 +611,51 @@
             updateTypingIndicator();
         });
 
+        connection.on('SearchResults', (results) => {
+        console.log('🔥  SearchResults СРАБОТАЛ!');
+        console.log('📦 Получено:', results);
+        console.log('📦 Длина:', results?.length);
+      
+        // Очищаем сообщения
+        messagesDiv.innerHTML = '';
+        
+        if (!results || results.length === 0) {
+            messagesDiv.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">🔍 Ничего не найдено</div>';
+            return;
+        }
+        
+        // Заголовок с количеством найденных
+        const header = document.createElement('div');
+        header.style.cssText = 'text-align:center; color:#666; font-size:14px; padding:8px; border-bottom:1px solid #eee;';
+        header.textContent = `🔍 Найдено ${results.length} сообщений`;
+        messagesDiv.appendChild(header);
+        
+        // Отображаем результаты
+        results.forEach(msg => {
+            if (msg.isDeleted) return;
+            
+            const div = document.createElement('div');
+            div.className = 'msg';
+            const isSelf = msg.userName === username;
+            div.classList.add(isSelf ? 'self' : 'other');
+            
+            // Подсветка найденного текста
+            const query = document.getElementById('searchInput')?.value.trim() || '';
+            let content = msg.content;
+            if (query) {
+                const regex = new RegExp(`(${query})`, 'gi');
+                content = content.replace(regex, '<mark style="background:#ffeb3b; color:#000; padding:0 4px; border-radius:4px;">$1</mark>');
+            }
+            
+            div.innerHTML = `
+                <div class="username">${msg.userName}</div>
+                <div class="msg-content">${content}</div>
+                <div class="meta">${new Date(msg.sentAt).toLocaleTimeString()}</div>
+            `;
+            messagesDiv.appendChild(div);
+        });
+    });
+
         try {
             await connection.start();
             console.log('✅ Подключено');
@@ -625,13 +824,127 @@
         if (Notification.permission == 'granted')
             new Notification(title, {
                 body: body,
-                icon: 'https://cdn-icons-png.flatication.com/512/4712/4712101.png'
+                icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712101.png'
         });
 
         else if (Notification.permission !== 'denied') {
             Notification.requestPermission();
         }
     }
+
+
+    // ============== Темная тема ============
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeToggleBtn');
+
+        body.classList.toggle('dark-mode');
+
+        if (body.classList.contains('dark-mode')) {
+            btn.textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
+
+        else {
+            btn.textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    // ========== Загрузка сохраненной темы ==========
+    function loadTheme() {
+        const theme = localStorage.getItem('theme');
+        const btn = document.getElementById('themeToggleBtn');
+
+        if (theme == 'dark') {
+            document.body.classList.add('dark-mode');
+            btn.textContent = '☀️';
+        }
+
+        else {
+            btn.textContent = '🌙';
+        }
+    }
+
+//============== Обработчик результатов поиска ================
+    connection.on('SearchResults', (results) => {
+    console.log('🔍 Найдено:', results.length);
+    console.log('📦 Получено:', results);
+    console.log('📦 Тип:', typeof results);
+    console.log('📦 Это массив?', Array.isArray(results));
+    console.log('📦 Длина:', results?.length);
+
+    messagesDiv.innerHTML = '';
+    
+    if (results.length === 0) {
+        messagesDiv.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">🔍 Ничего не найдено</div>';
+        return;
+    }
+    
+    // Заголовок
+    const header = document.createElement('div');
+    header.style.cssText = 'text-align:center; color:#666; font-size:14px; padding:8px; border-bottom:1px solid #eee;';
+    header.textContent = `🔍 Найдено ${results.length} сообщений`;
+    messagesDiv.appendChild(header);
+    
+    results.forEach(msg => {
+        if (msg.isDeleted) return;
+        
+        const div = document.createElement('div');
+        div.className = 'msg';
+        const isSelf = msg.userName === username;
+        div.classList.add(isSelf ? 'self' : 'other');
+        
+        const query = document.getElementById('searchInput')?.value.trim() || '';
+        let content = msg.content;
+        if (query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            content = content.replace(regex, '<mark style="background:#ffeb3b; color:#000; padding:0 4px; border-radius:4px;">$1</mark>');
+        }
+        
+        div.innerHTML = `
+            <div class="username">${msg.userName}</div>
+            <div class="msg-content">${content}</div>
+            <div class="meta">${new Date(msg.sentAt).toLocaleTimeString()}</div>
+        `;
+        messagesDiv.appendChild(div);
+    });
+});
+
+
+    // ============ Поиск сообщений ============
+    async function searchMessages() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) {
+            alert('Введите текст для поиска');
+            return;
+        }
+
+        try {
+            await connection.invoke('SearchMessages', {
+                roomName: currentRoom,
+                query: query,
+                limit: 50
+            });
+        }
+
+        catch (e) {
+            console.error('❌ Ошибка поиска:', e);
+            alert('Ошибка поиска');
+        }
+    }
+
+    // ===== Очистка поиска ==========
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        searcResults = [];
+        connection.invoke('GetHistoryMessagesAsync', currentRoom, 50);
+    }
+
+    // ========= Поиск по Enter =========
+    document.getElementById('searchInput')?.addEventListener('keydown', (e) => {
+        if (e.key == 'Enter') searchMessages();
+    });
 
     // =========================================================
     // 8. СТАРТ
