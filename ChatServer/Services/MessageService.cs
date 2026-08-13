@@ -7,6 +7,7 @@ using ServiceResultModel;
 using RoomModel;
 using ICache;
 using IMessageServcieDTO;
+using SearchMessageModel;
 
 using Microsoft.EntityFrameworkCore; 
 
@@ -165,5 +166,36 @@ public class MessageService : IMessageService
         {
             return ServiceResult<bool>.Failure(ex.Message);
         }
+    }
+
+
+    public async Task<ServiceResult<List<MessageDto>>> SearchMessagesAsync(SearchMessageDto request)
+    {
+        _logger.LogInformation($"🔎 Поиск в комнате {request.RoomName} по запросу {request.Query}");
+
+        var findRoom = await _db.Rooms.FirstOrDefaultAsync(t => t.Name == request.RoomName);
+        if (findRoom is null) {
+            _logger.LogWarning($"❌ Комната {request.RoomName} не найдена!");
+            return ServiceResult<List<MessageDto>>.Failure($"❌ Комната {request.RoomName} не найдена!");
+        }
+
+        var messages = await _db.Messages
+            .Include(m => m.User)
+            .Where(m => m.RoomId == findRoom.Id && m.Content.Contains(request.Query))
+            .OrderByDescending(m => m.SentAt)
+            .Take(request.Limit)
+            .OrderBy(m => m.SentAt)
+            .Select(m => new MessageDto
+            {
+                Id = m.Id,
+                UserName = m.User.UserName,
+                Content = m.Content,
+                SentAt = m.SentAt,
+                IsDeleted = m.IsDeleted,
+                IsEdited = m.IsEdited
+            }).ToListAsync();
+        
+        _logger.LogInformation($"✅ найдено {messages.Count} сообщений!");
+        return ServiceResult<List<MessageDto>>.Success(messages);
     }
 }
