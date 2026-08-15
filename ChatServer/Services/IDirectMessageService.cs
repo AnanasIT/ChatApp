@@ -7,7 +7,7 @@ using DirectChatRoomDTO;
 
 namespace IDirectMessageServiceModel;
 
-public interface IDirectMesasgeService
+public interface IDirectMessageService
 {
     Task<ServiceResult<List<DirectChatRoomDto>>> GetAllChatRoomsAsync(int userId);
     Task<ServiceResult<List<DirectMessageDto>>> GetMessagesAsync(int userId, int otherUserId, int limit = 50);

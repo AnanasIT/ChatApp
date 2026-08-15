@@ -11,7 +11,7 @@ using MessageModel;
 
 namespace DirectMessageServiceModel;
 
-public class DirectMessageService : IDirectMesasgeService
+public class DirectMessageService : IDirectMessageService
 {
     protected readonly AppDbContext _db;
     protected readonly ILogger<DirectMessageService> _logger;

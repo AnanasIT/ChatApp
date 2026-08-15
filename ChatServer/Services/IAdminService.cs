@@ -1,5 +1,5 @@
 using AdminUserDTO;
-using AdmnRoomDTO;
+using AdmnRoomDTOModel;
 using RoomStatsDTO;
 using ChatStatDTO;
 

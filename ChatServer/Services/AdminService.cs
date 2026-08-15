@@ -87,7 +87,12 @@ public class AdminService : IAdminService
             return ServiceResult<bool>.Failure($"Пользователь с ID {userId} не найден!");
         }
 
+        var messages = await _db.Messages.Where(m => m.UserId == userId).ToListAsync();
+        _db.Messages.RemoveRange(messages);
+
         _db.Users.Remove(findUser);
+        await _db.SaveChangesAsync();
+        
         _logger.LogInformation($"✅ Пользователь успешно удален!");
         return ServiceResult<bool>.Success(true);
     }

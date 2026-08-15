@@ -40,7 +40,7 @@ public class JwtService : IJwtService
             signingCredentials:credentials
         );
 
-        _logger.LogInformation($"Токен для {User.UserName} сгенерирован!");
+        _logger.LogInformation($"Токен для {User.UserName} (Role: {User.Role}) сгенерирован!");
         _logger.LogInformation($"Токен: {new JwtSecurityTokenHandler().WriteToken(token)}");
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

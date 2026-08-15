@@ -38,10 +38,10 @@ public class AuthService : IAuthService
 
         string Role = string.Empty;
 
-        if (_config["AdminSettings:AdminPassword"] == request.Password && 
-            _config["AdminSettings:AdminName"] == request.UserName) {
-                Role = "Admin";
-            }
+        if (_config["Admin:Username"] == request.UserName && 
+            _config["Admin:Password"] == request.Password) {
+            Role = "Admin";
+        }
 
         else
         {
@@ -61,16 +61,14 @@ public class AuthService : IAuthService
         await _db.Users.AddAsync(newUser);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation($"{newUser.UserName} успешно зарегистрировался!");
-        var getUser = await _db.Users.FirstOrDefaultAsync(t => t.UserName == request.UserName);
-
-        var token = _jwt.GenerateToken(getUser!);
+        _logger.LogInformation($"✅ {newUser.UserName} успешно зарегистрировался! Роль - {newUser.Role}");
+        var token = _jwt.GenerateToken(newUser);
 
         return ServiceResult<AuthResponse>.Success(new AuthResponse
         {
            Token = token,
-           UserName = getUser.UserName,
-           Role = getUser.Role
+           UserName = newUser!.UserName,
+           Role = newUser.Role
         });
     }
 
@@ -92,7 +90,7 @@ public class AuthService : IAuthService
             return ServiceResult<AuthResponse>.Failure($"Неправильный пароль!");
         }
 
-        _logger.LogInformation($"Успешный вход в аккаунт {request.UserName}");
+        _logger.LogInformation($"✅ Успешный вход в аккаунт {request.UserName} Роль - {findUser.Role}");
         var token = _jwt.GenerateToken(findUser);
 
         return ServiceResult<AuthResponse>.Success(new AuthResponse
