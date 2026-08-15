@@ -9,6 +9,7 @@ using FluentValidation;
 using ValidatorModel;
 
 using SearchMessageModel;
+using IDirectMessageServiceModel;
 
 
 namespace ChatHubs;
@@ -18,6 +19,7 @@ public class ChatHub : Hub
 {
     private readonly IMessageService _messageService;
     private readonly IRoomService _roomService;
+    private readonly IDirectMessageService _directService;
     private readonly MessageValidator _messageValidator;
     private readonly RoomValidator _roomValidator;
     private ILogger<ChatHub> _logger;
@@ -25,13 +27,14 @@ public class ChatHub : Hub
 
     public ChatHub(IMessageService messageService, IRoomService roomService, 
                    ILogger<ChatHub> logger, MessageValidator messageValidator, 
-                   RoomValidator roomValidator) {
+                   RoomValidator roomValidator, IDirectMessageService directService) {
 
         _messageService = messageService;
         _roomService = roomService;
         _logger = logger;
         _messageValidator = messageValidator;
         _roomValidator = roomValidator;
+        _directService = directService;
     }
 
     private string? GetUserName() => Context.User?.Identity?.Name;
@@ -77,9 +80,43 @@ public class ChatHub : Hub
     }
 
 
+    // =============== Обработчики для личных сообщений =======================
+    public async Task SendDirectMessage(int receiverId, string content)
+    {
+        _logger.LogInformation("🔥 Вызов SendDirectMessage 🔥");
+
+        var sendId = GetUserId();
+        var senderName = GetUserName() ?? "Аноним";
+
+        if (string.IsNullOrWhiteSpace(content)) return;
+
+        var message = await _directService.SendMessageAsync(sendId, receiverId, content);
+
+        await Clients.Caller.SendAsync("DirectMessageSent", message.Data);
+        await Clients.User(receiverId.ToString()).SendAsync("DirectMessageSent", message.Data);
+    }
+
+    public async Task GetDirectMessage(int otherUserId, int limit = 50)
+    {
+        _logger.LogInformation("🔥 Вызов GetDirectMessage 🔥");
+
+        var userId = GetUserId();
+        var messages = await _directService.GetMessagesAsync(userId, otherUserId, limit);
+        await Clients.Caller.SendAsync("DirectMessagesHistory", messages.Data);
+    }
+
+    public async Task GetDirectChatRooms()
+    {
+        var userId = GetUserId();
+        var rooms = await _directService.GetAllChatRoomsAsync(userId);
+        await Clients.Caller.SendAsync("DirectChatRooms", rooms.Data);
+    }
+
+
     // ========== Метод для поиска сообщений ================
     public async Task SearchMessages(SearchMessageDto request)
     {
+        _logger.LogInformation("🔥 SearchMessages ВЫЗВАН!");
         var userName = GetUserName() ?? "Аноним";
 
         if (string.IsNullOrWhiteSpace(request.RoomName)) request.RoomName = "Общий";
@@ -93,7 +130,8 @@ public class ChatHub : Hub
         var result = await _messageService.SearchMessagesAsync(request);
 
         if (result.IsSucces) {
-            await Clients.Caller.SendAsync("SearchResults", result.Data);
+            _logger.LogInformation($"🔥 Найдено {result?.Data?.Count} сообщений!");
+            await Clients.Caller.SendAsync("SearchResults", result?.Data);
         }
 
         else {
