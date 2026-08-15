@@ -26,6 +26,9 @@ using MessageServiceModel;
 using RoomServiceModel;
 using UserServiceModel;
 
+using DirectMessageServiceModel;
+using IDirectMessageServiceModel;
+
 namespace ChatServer;
 
 public class Program
@@ -88,6 +91,9 @@ public class Program
         builder.Services.AddScoped<IRoomService, RoomService>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IAdminService, AdminService>();
+
+        builder.Services.AddScoped<IDirectMessageService, DirectMessageService>();
+        
 
         builder.Services.AddScoped<MessageValidator>();
         builder.Services.AddScoped<RoomValidator>();
@@ -165,7 +171,7 @@ public class Program
             var users = await service.GetAllUserAsync();
             return users.IsSucces ? Results.Ok(users.Data) : Results.BadRequest(users.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapGet("/admin/users/{id}", async (int id, IAdminService service) =>
@@ -173,7 +179,7 @@ public class Program
             var user = await service.GetUserById(id);
             return user.IsSucces ? Results.Ok(user.Data) : Results.BadRequest(user.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapPut("/admin/users/{id}/role", async (int id, string newRole, IAdminService service) =>
@@ -181,7 +187,7 @@ public class Program
             var result = await service.ChangeUserRoleAsync(id, newRole);
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapDelete("/admin/users/{id}", async (int id, IAdminService service) =>
@@ -189,7 +195,7 @@ public class Program
             var result = await service.DeleteUserAsync(id);
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapGet("/admin/rooms", async (IAdminService service) =>
@@ -197,7 +203,7 @@ public class Program
            var result = await service.GetAllRoomsAsync();
            return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));;
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));;
 
 
         app.MapGet("/admin/rooms/{roomName}/stats", async (string roomName, IAdminService service) =>
@@ -205,7 +211,7 @@ public class Program
             var result = await service.GetRoomStatAsync(roomName);
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapDelete("/admin/rooms/{roomName}", async (string roomName, IAdminService service) =>
@@ -213,7 +219,7 @@ public class Program
             var result = await service.DeleteRoomAsync(roomName);
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapDelete("/admin/rooms/{roomName}/clear", async (string roomName, IAdminService service) =>
@@ -221,7 +227,7 @@ public class Program
             var result = await service.ClearRoomHistoryAsync(roomName);
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 
         app.MapGet("/admin/stats", async (IAdminService service) =>
@@ -229,7 +235,7 @@ public class Program
             var result = await service.GetChatStatsAsync();
             return result.IsSucces ? Results.Ok(result.Data) : Results.BadRequest(result.Error);
 
-        }).RequireAuthorization(policy => policy.RequireRole("Role"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
         // ===== START =====
         app.Run();
