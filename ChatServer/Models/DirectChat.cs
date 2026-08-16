@@ -1,7 +1,7 @@
 using UserModel;
 
 namespace DirectChatRoomModel;
-public class DicrectChatRoom
+public class DirectChatRoom
 {
     public int Id {get; set;}
     public int UserIdOne {get; set;}

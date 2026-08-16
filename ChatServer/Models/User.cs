@@ -7,4 +7,7 @@ public class User
     public string Email {get; set;} = string.Empty;
     public string Role {get; set;} = "User";
     public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
+
+    public string? Bio {get; set;} = string.Empty;
+    public string? AvatarPath {get; set;} = string.Empty;
 }
