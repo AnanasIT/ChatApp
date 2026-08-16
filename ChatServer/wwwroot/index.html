@@ -314,7 +314,168 @@
     border-radius: 8px;
 }
 
-        @media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
+/* ===== КРАСИВЫЙ СПИСОК DM ===== */
+.dm-chat-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: 0.15s;
+    border-bottom: 1px solid #f0eef5;
+    background: white;
+    margin: 2px 0;
+}
+.dm-chat-item:hover {
+    background: #f3edf7;
+    transform: translateX(2px);
+}
+.dm-chat-item .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+.dm-chat-item .info {
+    flex: 1;
+    min-width: 0;
+}
+.dm-chat-item .name {
+    font-weight: 600;
+    color: #4a148c;
+    font-size: 14px;
+}
+.dm-chat-item .last-msg {
+    font-size: 13px;
+    color: #888;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dm-chat-item .badge {
+    background: #d32f2f;
+    color: white;
+    border-radius: 50%;
+    padding: 0 8px;
+    font-size: 11px;
+    min-width: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-weight: 600;
+}
+.dm-chat-item .time {
+    font-size: 11px;
+    color: #aaa;
+    margin-left: 8px;
+}
+
+/* ===== СООБЩЕНИЯ В DM (КАК В ТЕЛЕГРАММЕ) ===== */
+.dm-message {
+    max-width: 80%;
+    padding: 8px 14px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    font-size: 14px;
+    animation: slideIn 0.2s ease;
+}
+.dm-message.sent {
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+.dm-message.received {
+    background: white;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #eee;
+}
+.dm-message .time {
+    font-size: 10px;
+    opacity: 0.6;
+    margin-left: 10px;
+}
+.dm-message .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #ff4444;
+    font-size: 12px;
+    opacity: 0.3;
+    padding: 0 4px;
+    margin-left: 6px;
+}
+.dm-message .delete-btn:hover {
+    opacity: 1;
+}
+
+/* ===== БОЛЬШЕ ВЫСОТА ===== */
+#dmChatWindow {
+    height: 220px !important;
+}
+#dmPanel {
+    height: 420px !important;
+}
+
+/* ===== СООБЩЕНИЯ В DM КАК В ТГ ===== */
+#dmMessages {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+#dmMessages .dm-message.sent {
+    align-self: flex-end !important;
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2) !important;
+    color: white !important;
+    border-radius: 18px 18px 4px 18px !important;
+    max-width: 75% !important;
+    padding: 10px 16px !important;
+}
+
+#dmMessages .dm-message.received {
+    align-self: flex-start !important;
+    background: white !important;
+    color: #333 !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 18px 18px 18px 4px !important;
+    max-width: 75% !important;
+    padding: 10px 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+#dmMessages .dm-message .time {
+    font-size: 10px !important;
+    opacity: 0.6 !important;
+    margin-left: 10px !important;
+}
+
+#dmMessages .dm-message .delete-btn {
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: #ff4444 !important;
+    font-size: 12px !important;
+    margin-left: 6px !important;
+    opacity: 0.4 !important;
+}
+
+#dmMessages .dm-message .delete-btn:hover {
+    opacity: 1 !important;
+}
+
+    @media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
     </style>
 </head>
 <body>
@@ -347,8 +508,9 @@
                 
                 <button onclick="logout()" style="background:#d32f2f; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">Выйти</button>
                 
-                <button onclick="toggleDmPanel()" style="background: #9c27b0; color:white; border:none; border-radius:40px; padding:6px 16px; cursor:pointer; font-size:13px;">
-                <span id="dmUnreadBadge" style="background:red; color:white; border-radius:50%; padding:0 6px; font-size:11px; margin-left:4px; display:none;">0</span>
+                <button onclick="toggleDmPanel()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:40px; padding:6px 16px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(156,39,176,0.3);">
+                💬  DM
+                <span id="dmUnreadBadge">0</span>
                 </button>
 
             </div>
@@ -384,43 +546,32 @@
                 <p style="color:#888;">Нажмите кнопку для загрузки данных</p>
             </div>
         </div>
+        <div id="dmPanel" style="display:none; background:rgba(255,255,255,0.95); backdrop-filter:blur(12px); padding:16px; border-bottom:1px solid #e0e0e0; height:420px; overflow-y:auto; flex-shrink:0; border-radius:0 0 16px 16px;">
 
-    <div id="dmPanel" style="display:none; background:rgba(255,255,255,0.95); backdrop-filter:blur(12px); padding:16px; border-bottom:1px solid #e0e0e0; height:340px; overflow-y:auto; flex-shrink:0; border-radius:0 0 16px 16px; box-shadow: inset 0 4px 12px rgba(0,0,0,0.02);">
-    
-    <!-- Заголовок -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h4 style="margin:0; color:#9c27b0; font-size:18px; display:flex; align-items:center; gap:8px;">
-            <span style="font-size:22px;">💬 </span> Личные сообщения
-            <span id="dmUnreadBadgeHeader" style="background:#d32f2f; color:white; border-radius:12px; padding:0 10px; font-size:12px; display:none;">0</span>
-        </h4>
-        <button onclick="toggleDmPanel()" style="background:#f5f5f5; border:none; border-radius:50%; width:32px; height:32px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
+        <h4 style="margin:0; color:#9c27b0; font-size:18px;">💬  Личные сообщения</h4>
+        <button onclick="toggleDmPanel()" style="background:#f5f5f5; border:none; border-radius:50%; width:32px; height:32px; font-size:18px; cursor:pointer;">✕</button>
     </div>
-    
-    <!-- Кнопка нового диалога -->
-    <button onclick="showUserList()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:24px; padding:8px 20px; cursor:pointer; font-weight:500; font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:8px; transition:0.2s; box-shadow:0 2px 8px rgba(156,39,176,0.3);">
-        <span style="font-size:18px;">➕</span> Новый диалог
+
+    <button onclick="showUserList()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:24px; padding:8px 20px; cursor:pointer; font-weight:500; font-size:14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(156,39,176,0.3);">
+        ➕ Новый диалог
     </button>
-    
-    <!-- Список всех пользователей -->
-    <div id="dmUserList" style="display:none; max-height:100px; overflow-y:auto; background:#f9f9f9; border-radius:12px; padding:6px; margin-bottom:10px; border:1px solid #eee;">
-        <p style="color:#888; text-align:center; padding:10px; margin:0; font-size:14px;">⏳ Загрузка...</p>
-    </div>
-    
-    <!-- Список чатов -->
-    <div id="dmChatList" style="max-height:90px; overflow-y:auto; border-bottom:1px solid #eee; margin-bottom:8px; border-radius:8px; background:#fafafa;">
+
+    <div id="dmUserList" style="display:none; max-height:120px; overflow-y:auto; background:#f9f9f9; border-radius:12px; padding:6px; margin-bottom:10px; border:1px solid #eee;"></div>
+
+    <div id="dmChatList" style="max-height:110px; overflow-y:auto; border-bottom:1px solid #eee; margin-bottom:8px; border-radius:8px; background:#fafafa;">
         <p style="color:#aaa; text-align:center; padding:14px; margin:0; font-size:13px;">💭  Здесь будут ваши диалоги</p>
     </div>
-    
-    <!-- Окно чата -->
-    <div id="dmChatWindow" style="display:none; flex-direction:column; height:170px; background:#f8f8ff; border-radius:12px; padding:8px 12px; border:1px solid #e8e0f0;">
+
+    <div id="dmChatWindow" style="display:none; flex-direction:column; height:220px; background:#f8f8ff; border-radius:12px; padding:8px 12px; border:1px solid #e8e0f0; margin-top:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid #e8e0f0;">
             <span id="dmChatPartner" style="font-weight:600; color:#4a148c; font-size:15px;">💬  Чат</span>
             <button onclick="closeDmChat()" style="background:none; border:none; cursor:pointer; font-size:16px; color:#888;">✕</button>
         </div>
-        <div id="dmMessages" style="flex:1; overflow-y:auto; padding:6px 0; font-size:14px; display:flex; flex-direction:column; gap:4px;"></div>
+        <div id="dmMessages" style="flex:1; overflow-y:auto; padding:6px 0; font-size:14px; display:flex; flex-direction:column; gap:6px;"></div>
         <div style="display:flex; gap:8px; margin-top:6px;">
-            <input id="dmInput" placeholder="Напишите сообщение..." style="flex:1; padding:8px 14px; border-radius:24px; border:1px solid #ddd; outline:none; font-size:14px; background:white; transition:0.2s;" />
-            <button onclick="sendDmMessage()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; transition:0.2s; box-shadow:0 2px 8px rgba(156,39,176,0.3);">📤</button>
+            <input id="dmInput" placeholder="Напишите сообщение..." style="flex:1; padding:8px 14px; border-radius:24px; border:1px solid #ddd; outline:none; font-size:14px; background:white;" />
+            <button onclick="sendDmMessage()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; font-size:18px; box-shadow:0 2px 8px rgba(156,39,176,0.3);">📤</button>
         </div>
     </div>
 </div>
@@ -465,16 +616,18 @@
 // ЛИЧНЫЕ СООБЩЕНИЯ (DM)
 // =========================================================
 
-let currentDmPartnerId = null;
-let dmChatRooms = [];
+    let currentDmPartnerId = null;
+    let dmChatRooms = [];
     // ---- Хелпер для текущего user ID ----
     let currentUserId = 0;
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        currentUserId = parseInt(payload.nameid || payload.sub || 0);
+        // Правильный путь к ID
+        currentUserId = parseInt(payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 0);
     } catch (e) {
         console.warn('Не удалось получить userId из токена');
     }
+console.log('✅ Текущий userId:', currentUserId);
 
 
     // ============================= АВТОРИЗАЦИЯ =============================
@@ -711,6 +864,7 @@ let dmChatRooms = [];
             .withAutomaticReconnect()
             .build();
 
+        // ============= ПОЛУЧЕНИЕ СООБЩЕНИЙ ==================
         connection.on('ReceiveMessage', (user, msg, id) => {
             appendMessage(user, msg, id || 0, false, false);
             
@@ -726,6 +880,8 @@ let dmChatRooms = [];
             }
         });
 
+
+        // =================== ИСТОРИЯ ====================
         connection.on('ReceiveHistory', (history) => {
             messagesDiv.innerHTML = '';
             if (history && history.length) {
@@ -735,15 +891,18 @@ let dmChatRooms = [];
             }
         });
 
+        // =================== ОНЛАЙН ===================
         connection.on('ReceiveOnlineUsers', (users) => {
             onlineBadge.textContent = `🟢  Онлайн: ${users ? users.length : 0}`;
         });
 
+        // =================== УДАЛЕНИЕ ========================
         connection.on('MessageDeleted', (id) => {
             const el = document.querySelector(`[data-id="${id}"]`);
             if (el) { el.innerHTML = '🗑️  Сообщение удалено'; el.style.opacity = '0.5'; }
         });
 
+        // =================== РЕДАКТИРОВАНИЕ ========================
         connection.on('MessageEdited', (id, newText) => {
             const el = document.querySelector(`[data-id="${id}"]`);
             if (el) {
@@ -752,6 +911,7 @@ let dmChatRooms = [];
             }
         });
 
+        // =================== ПЕЧАТАЕТ ========================
         connection.on("UserTyping", (user) => {
             typingUsers[user] = true;
             updateTypingIndicator();
@@ -762,6 +922,7 @@ let dmChatRooms = [];
             updateTypingIndicator();
         });
 
+        // =================== ПОИСК ========================
         connection.on('SearchResults', (results) => {
         console.log('🔥  SearchResults СРАБОТАЛ!');
         console.log('📦 Получено:', results);
@@ -807,6 +968,139 @@ let dmChatRooms = [];
         });
     });
 
+        // =================== ЛИЧНЫЕ СООБЩЕНИЯ ==================
+        connection.on('DirectChatRooms', (rooms) => {
+        console.log('🔥 🔥 🔥  DirectChatRooms СРАБОТАЛ!', rooms);
+
+        const list = document.getElementById('dmChatList');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        if (!rooms || rooms.length === 0) {
+            list.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Нет чатов. Начните диалог!</p>';
+            return;
+        }
+        
+        rooms.forEach(room => {
+            const div = document.createElement('div');
+            div.className = 'dm-chat-item';
+            div.innerHTML = `
+                <div>
+                    <div class="name">${room.otherUserName}</div>
+                    <div class="last-msg">${room.lastMessage}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${room.unreadCount > 0 ? `<span class="unread">${room.unreadCount}</span>` : ''}
+                    <span style="font-size:12px; color:#888;">${new Date(room.lastMessageAt).toLocaleTimeString()}</span>
+                </div>
+            `;
+            div.onclick = () => openDmChat(room.otherUserId, room.otherUserName);
+            list.appendChild(div);
+        });
+        
+        // Обновляем бейдж
+        let totalUnread = rooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+        const badge = document.getElementById('dmUnreadBadge');
+        if (badge) {
+            if (totalUnread > 0) {
+                badge.style.display = 'inline';
+                badge.textContent = totalUnread;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    });
+
+    connection.on('DirectMessageReceived', (message) => {
+        console.log('📨  DirectMessageReceived:', message);
+        if (currentDmPartnerId === message.senderId) {
+            renderDmMessages([message]);
+        }
+        // Обновляем список чатов
+        loadDmChats();
+    });
+
+    connection.on('DirectMessageSent', (message) => {
+        console.log('📤 DirectMessageSent:', message);
+        renderDmMessages([message]);
+        loadDmChats();
+    }); 
+
+    // =========================================================
+// ОТМЕТКА О ПРОЧТЕНИИ
+// =========================================================
+
+connection.on('DirectMessagesRead', (byUserId) => {
+    console.log(`✅ Сообщения прочитаны пользователем ${byUserId}`);
+    // Можно обновить список чатов или убрать бейдж
+    loadDmChats();
+});
+
+// =========================================================
+// УДАЛЕНИЕ СООБЩЕНИЯ
+// =========================================================
+
+    connection.on('DirectMessageDeleted', (messageId) => {
+    console.log(`🗑️  Сообщение ${messageId} удалено`);
+    
+    // Удаляем сообщение из DOM
+    const msgElement = document.querySelector(`.dm-message[data-id="${messageId}"]`);
+    if (msgElement) {
+        msgElement.remove();
+    }
+    });
+
+    // ============ Вызов прочтения сообщения при открытии чата ==============
+    async function openDmChat(userId, userName) {
+    currentDmPartnerId = userId;
+    document.getElementById('dmChatPartner').textContent = `Чат с ${userName}`;
+    document.getElementById('dmChatWindow').style.display = 'flex';
+    
+    try {
+        // ===== ОТМЕТКА О ПРОЧТЕНИИ =====
+        await connection.invoke('MarkDirectMessagesAsRead', userId);
+        console.log('✅ Сообщения отмечены как прочитанные');
+        
+        // ===== ЗАГРУЗКА ИСТОРИИ =====
+        await connection.invoke('GetDirectMessages', userId, 50);
+    } catch (e) {
+        console.error('❌ Ошибка:', e);
+    }
+}
+
+    connection.on('DirectMessagesHistory', (messages) => {
+        console.log('📜 Тип данных:', typeof messages)
+
+        console.log('📜 DirectMessagesHistory СРАБОТАЛ!', messages);
+        console.log('📦 Количество сообщений:', messages?.length || 0);
+    
+    const container = document.getElementById('dmMessages');
+    if (!container) {
+        console.error('❌ dmMessages не найден');
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Нет сообщений</p>';
+        return;
+    }
+    
+    messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `dm-message ${msg.senderId === currentUserId ? 'sent' : 'received'}`;
+        div.innerHTML = `
+            ${msg.content}
+            <span class="time">${new Date(msg.sentAt).toLocaleTimeString()}</span>
+        `;
+        container.appendChild(div);
+    });
+    
+    container.scrollTop = container.scrollHeight;
+});
+
+        // =================== START ==================
         try {
             await connection.start();
             console.log('✅ Подключено');
@@ -1098,63 +1392,24 @@ let dmChatRooms = [];
     });
 
 // ---- Открыть/закрыть DM панель ----
-function toggleDmPanel() {
-    const panel = document.getElementById('dmPanel');
-    if (panel.style.display === 'block') {
-        panel.style.display = 'none';
-    } else {
-        panel.style.display = 'block';
-        loadDmChats();
-    }
+    function toggleDmPanel() {
+        const panel = document.getElementById('dmPanel');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+        } else {
+            panel.style.display = 'block';
+            loadDmChats();
+        }
 }
 
 // ---- Загрузить список чатов ----
 async function loadDmChats() {
     try {
-        const res = await connection.invoke('GetDirectChatRooms');
-        console.log('📦 DM чаты:', res);
-        
-        const list = document.getElementById('dmChatList');
-        list.innerHTML = '';
-        
-        if (!res || res.length === 0) {
-            list.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Нет чатов. Начните диалог с пользователем!</p>';
-            return;
-        }
-        
-        dmChatRooms = res;
-        let totalUnread = 0;
-        
-        res.forEach(room => {
-            totalUnread += room.unreadCount || 0;
-            
-            const div = document.createElement('div');
-            div.className = 'dm-chat-item';
-            div.innerHTML = `
-                <div>
-                    <div class="name">${room.otherUserName}</div>
-                    <div class="last-msg">${room.lastMessage}</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    ${room.unreadCount > 0 ? `<span class="unread">${room.unreadCount}</span>` : ''}
-                    <span style="font-size:12px; color:#888;">${new Date(room.lastMessageAt).toLocaleTimeString()}</span>
-                </div>
-            `;
-            div.onclick = () => openDmChat(room.otherUserId, room.otherUserName);
-            list.appendChild(div);
-        });
-        
-        // Обновляем бейдж с непрочитанными
-        const badge = document.getElementById('dmUnreadBadge');
-        if (totalUnread > 0) {
-            badge.style.display = 'inline';
-            badge.textContent = totalUnread;
-        } else {
-            badge.style.display = 'none';
-        }
+        console.log('🔥 Вызываю GetDirectChatRooms');
+        await connection.invoke('GetDirectChatRooms');
         
     } catch (e) {
-        console.error('❌ Ошибка загрузки DM чатов:', e);
+        console.error('❌ Ошибка:', e);
     }
 }
 
@@ -1167,6 +1422,7 @@ async function openDmChat(userId, userName) {
     
     // Загружаем историю
     try {
+        console.log("🔥 Вызываю GetDirectMessages для userId", userId)
         const messages = await connection.invoke('GetDirectMessages', userId, 50);
         renderDmMessages(messages);
     } catch (e) {
@@ -1183,6 +1439,7 @@ function closeDmChat() {
 // ---- Отобразить сообщения ----
 function renderDmMessages(messages) {
     const container = document.getElementById('dmMessages');
+    if (!container) return;
     container.innerHTML = '';
     
     if (!messages || messages.length === 0) {
@@ -1192,10 +1449,23 @@ function renderDmMessages(messages) {
     
     messages.forEach(msg => {
         const div = document.createElement('div');
-        div.className = `dm-message ${msg.senderId === currentUserId ? 'sent' : 'received'}`;
+        
+        // ===== ЭТО ВАЖНО! =====
+        const isMine = msg.senderId === currentUserId;
+        div.className = `dm-message ${isMine ? 'sent' : 'received'}`;
+        // ======================
+        
+        div.dataset.id = msg.id || 0;
+        
+        let deleteButton = '';
+        if (isMine) {
+            deleteButton = `<button class="delete-btn" onclick="deleteDirectMessage(${msg.id || 0})">🗑️ </button>`;
+        }
+        
         div.innerHTML = `
             ${msg.content}
             <span class="time">${new Date(msg.sentAt).toLocaleTimeString()}</span>
+            ${deleteButton}
         `;
         container.appendChild(div);
     });
@@ -1210,57 +1480,15 @@ async function sendDmMessage() {
     if (!content || !currentDmPartnerId) return;
     
     try {
-
-    await connection.invoke('SendDirectMessage', currentDmPartnerId, content);
+        await connection.invoke('SendDirectMessage', currentDmPartnerId, content);
         input.value = '';
-        // Сообщение добавится через обработчик DirectMessageSent
+        setTimeout(() => loadDmChats(), 500);
+
     } catch (e) {
         console.error('❌ Ошибка отправки DM:', e);
     }
 }
 
-// ---- Обработчики от сервера ----
-connection.on('DirectMessageSent', (message) => {
-    // Сообщение отправлено (показываем в чате)
-    renderDmMessages([message]);
-    // Обновляем список чатов
-    loadDmChats();
-});
-
-connection.on('DirectMessageReceived', (message) => {
-    // Получено новое сообщение
-    if (currentDmPartnerId === message.senderId) {
-        renderDmMessages([message]);
-    }
-    // Обновляем список чатов и бейдж
-    loadDmChats();
-});
-
-connection.on('DirectMessagesHistory', (messages) => {
-    renderDmMessages(messages);
-});
-
-connection.on('DirectChatRooms', (rooms) => {
-    // Обновляем список чатов
-    const list = document.getElementById('dmChatList');
-    list.innerHTML = '';
-    rooms.forEach(room => {
-        const div = document.createElement('div');
-        div.className = 'dm-chat-item';
-        div.innerHTML = `
-            <div>
-                <div class="name">${room.otherUserName}</div>
-                <div class="last-msg">${room.lastMessage}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                ${room.unreadCount > 0 ? `<span class="unread">${room.unreadCount}</span>` : ''}
-                <span style="font-size:12px; color:#888;">${new Date(room.lastMessageAt).toLocaleTimeString()}</span>
-            </div>
-        `;
-        div.onclick = () => openDmChat(room.otherUserId, room.otherUserName);
-        list.appendChild(div);
-    });
-});
 
 // ---- Enter для отправки DM ----
 document.addEventListener('DOMContentLoaded', function() {
@@ -1316,11 +1544,24 @@ async function showUserList() {
     }
 }
 
+// ============= Функция удаления на фронте ===============
+async function deleteDirectMessage(messageId) {
+    if (!confirm('Удалить это сообщение?')) return;
+    
+    try {
+        await connection.invoke('DeleteDirectMessage', messageId);
+        console.log(`🗑️  Запрос на удаление сообщения ${messageId} отправлен`);
+    } catch (e) {
+        console.error('❌ Ошибка удаления:', e);
+        alert('Не удалось удалить сообщение');
+    }
+}
+
 // ---- Начать диалог с пользователем ----
-function startDmChat(userId, userName) {
-    console.log('🔥 startDmChat вызван!', userId, userName);
-    document.getElementById('dmUserList').style.display = 'none';
-    openDmChat(userId, userName);
+    function startDmChat(userId, userName) {
+        console.log('🔥 startDmChat вызван!', userId, userName);
+        document.getElementById('dmUserList').style.display = 'none';
+        openDmChat(userId, userName);
 }
 
     // =========================================================
