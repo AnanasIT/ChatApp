@@ -4,12 +4,14 @@ using System.Security.Claims;
 
 using IMessageServcieDTO;
 using IRoomServiceModel;
+using ServiceResultModel;
 
 using FluentValidation;
 using ValidatorModel;
 
 using SearchMessageModel;
 using IDirectMessageServiceModel;
+using DirectChatRoomDTO;
 
 
 namespace ChatHubs;
@@ -81,6 +83,32 @@ public class ChatHub : Hub
 
 
     // =============== Обработчики для личных сообщений =======================
+    public async Task MarkDirectMessagesAsRead(int otherUserId)
+    {
+        var userId = GetUserId();
+        var result = await _directService.MarkAsReadAsync(userId, otherUserId);
+
+        if (result.IsSucces) {
+            _logger.LogInformation($"✅ Сообщения от {otherUserId} отмечены как прочитанные для {userId}");
+            await Clients.User(otherUserId.ToString()).SendAsync("DirectMessagesRead", userId);
+        }
+
+        else { _logger.LogError(result.Error);}
+    }
+
+    public async Task DeleteDirectMessage(int messageId) {
+        var userId = GetUserId();
+        var result = await _directService.DeleteMessageAsync(messageId, userId);
+
+        if (result.IsSucces)
+        {
+            await Clients.All.SendAsync("DirectMessageDeleted", messageId);
+            _logger.LogInformation($"🗑️ Сообщение {messageId} удалено пользователем {userId}");
+        }
+
+        else {_logger.LogError(result.Error);}
+    }
+
     public async Task SendDirectMessage(int receiverId, string content)
     {
         _logger.LogInformation("🔥 Вызов SendDirectMessage 🔥");
@@ -96,7 +124,7 @@ public class ChatHub : Hub
         await Clients.User(receiverId.ToString()).SendAsync("DirectMessageSent", message.Data);
     }
 
-    public async Task GetDirectMessage(int otherUserId, int limit = 50)
+    public async Task GetDirectMessages(int otherUserId, int limit = 50)
     {
         _logger.LogInformation("🔥 Вызов GetDirectMessage 🔥");
 
@@ -107,9 +135,20 @@ public class ChatHub : Hub
 
     public async Task GetDirectChatRooms()
     {
+        _logger.LogInformation("🔥 вызов GetDirectChatRooms 🔥");
+
         var userId = GetUserId();
         var rooms = await _directService.GetAllChatRoomsAsync(userId);
-        await Clients.Caller.SendAsync("DirectChatRooms", rooms.Data);
+
+        _logger.LogInformation($"🔥 НАЙДЕНО комнат: {rooms?.Data?.Count ?? 0}");
+        _logger.LogInformation($"🔥 ТИП ДАННЫХ: {rooms?.Data?.GetType().Name ?? "null"}");
+
+        if (rooms == null) {
+            rooms?.Data = new List<DirectChatRoomDto>();
+        }
+
+        await Clients.Caller.SendAsync("DirectChatRooms", rooms?.Data);
+        _logger.LogInformation($"✅ Отправлено {rooms?.Data?.Count} комнат");
     }
 
 
