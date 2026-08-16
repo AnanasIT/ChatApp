@@ -1,6 +1,6 @@
 namespace DirectChatRoomDTO;
 
-public class DirectChatRoomDTO
+public class DirectChatRoomDto
 {
     public int Id {get; set;}
     public int OtherUserId {get; set;}
