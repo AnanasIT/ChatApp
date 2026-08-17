@@ -27,8 +27,15 @@ public class DirectMessageService : IDirectMessageService
 
         var rooms = await _db.DirectRooms.Where(t => t.UserIdOne == userId || t.UserIdTwo == userId)
                                           .ToListAsync();
+
+        _logger.LogInformation($"📜 Найдено комнат в БД: {rooms.Count} 📜");
         
-        var result =new List<DirectChatRoomDto>();
+        if (rooms.Count == 0) {
+            _logger.LogWarning("⚠️ Комнат нет, возвращаю пустой список!");
+            return ServiceResult<List<DirectChatRoomDto>>.Success(new List<DirectChatRoomDto>());
+        } 
+        
+        var result = new List<DirectChatRoomDto>();
 
         foreach (var item in rooms)
         {
@@ -55,6 +62,7 @@ public class DirectMessageService : IDirectMessageService
             });   
         }
 
+        _logger.LogInformation($"✅ Возвращаю {result.Count} комнат!");
         return ServiceResult<List<DirectChatRoomDto>>.Success(result.OrderByDescending(r => r.LastMessage).ToList());
     }
 
@@ -146,27 +154,41 @@ public class DirectMessageService : IDirectMessageService
 
     public async Task<ServiceResult<bool>> MarkAsReadAsync(int userId, int otherUserId)
     {
-        var messages = await _db.DirectMessages
+        try
+        {   var messages = await _db.DirectMessages
                             .Where(m => m.SenderId == otherUserId && m.ReceiverId == userId && !m.IsRead)
                             .ToListAsync();
         
-        foreach (var msg in messages) {
-            msg.IsRead = true;
-            msg.ReadAt = DateTime.UtcNow;
+            foreach (var msg in messages) {
+                msg.IsRead = true;
+                msg.ReadAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            return ServiceResult<bool>.Success(true);
         }
 
-        await _db.SaveChangesAsync();
-        return ServiceResult<bool>.Success(true);
+        catch (Exception e)
+        {
+            return ServiceResult<bool>.Failure(e.Message);
+        }
     }
 
 
     public async Task<ServiceResult<bool>> DeleteMessageAsync(int messageId, int userId)
     {
-        var message = await _db.DirectMessages.FindAsync(messageId);
-        if (message is null || message.SenderId == userId) {return ServiceResult<bool>.Success(false);}
+        try
+           { 
+             var message = await _db.DirectMessages.FindAsync(messageId);
+             if (message is null || message.SenderId == userId) {return ServiceResult<bool>.Success(false);}
 
-        message.IsDeleted = true;
-        await _db.SaveChangesAsync();
-        return ServiceResult<bool>.Success(true);
+             message.IsDeleted = true;
+             await _db.SaveChangesAsync();
+             return ServiceResult<bool>.Success(true);
+           }
+        
+        catch (Exception ex) {
+            return ServiceResult<bool>.Failure(ex.Message); 
+        }
     }
 }
