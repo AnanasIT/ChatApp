@@ -475,6 +475,90 @@
     opacity: 1 !important;
 }
 
+/* ===== ПРОФИЛЬ ===== */
+#profileModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#profileModal > div {
+    background: white;
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+#profileModal h2 {
+    margin: 0;
+    color: #0a3b6b;
+}
+
+#profileModal label {
+    font-weight: 500;
+    font-size: 13px;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+}
+
+#profileModal input,
+#profileModal textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    font-size: 15px;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+#profileModal input:focus,
+#profileModal textarea:focus {
+    border-color: #1e88e5;
+}
+
+#profileModal textarea {
+    resize: vertical;
+}
+
+/* ===== ТЕМНАЯ ТЕМА ДЛЯ ПРОФИЛЯ ===== */
+body.dark-mode #profileModal > div {
+    background: #2a2a3e;
+    color: #e0e0e0;
+}
+
+body.dark-mode #profileModal h2 {
+    color: #e0e0e0;
+}
+
+body.dark-mode #profileModal label {
+    color: #aaa;
+}
+
+body.dark-mode #profileModal input,
+body.dark-mode #profileModal textarea {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.1);
+    color: #e0e0e0;
+}
+
+body.dark-mode #profileModal input:focus,
+body.dark-mode #profileModal textarea:focus {
+    border-color: #1e88e5;
+}
+
     @media (max-width:520px) { .chat-header { flex-wrap: wrap; } .online-badge { font-size: 12px; padding: 4px 12px; } .input-area { flex-wrap: wrap; } .input-area button { flex: 1; } }
     </style>
 </head>
@@ -499,7 +583,7 @@
         <div class="chat-header">
             <h1>💬  Чат <span>Beta</span></h1>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <span class="user-info" id="userNameDisplay">👤  Аноним</span>
+                <span class="user-info" id="userNameDisplay" onclick="openProfile()" style="cursor:pointer;" title="Кликните для редактирования профиля">👤   Аноним</span>
                 <span class="user-role" id="userRoleDisplay">👤  User</span>
                 <div class="online-badge" id="onlineBadge">🟢  Онлайн: 0</div>
                 <button id="adminToggleBtn" onclick="toggleAdminPanel()" style="display:none; background:#6c5ce7; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">🛡️  Админ</button>
@@ -507,6 +591,7 @@
                 <button id="themeToggleBtn" onclick="toggleTheme()" style="background:transparent; border:none; font-size:20px; cursor:pointer;">🌙 </button>
                 
                 <button onclick="logout()" style="background:#d32f2f; color:white; border:none; border-radius:40px; padding:4px 14px; cursor:pointer; font-size:13px;">Выйти</button>
+                
                 
                 <button onclick="toggleDmPanel()" style="background:linear-gradient(135deg, #9c27b0, #7b1fa2); color:white; border:none; border-radius:40px; padding:6px 16px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(156,39,176,0.3);">
                 💬  DM
@@ -547,6 +632,7 @@
             </div>
         </div>
         <div id="dmPanel" style="display:none; background:rgba(255,255,255,0.95); backdrop-filter:blur(12px); padding:16px; border-bottom:1px solid #e0e0e0; height:420px; overflow-y:auto; flex-shrink:0; border-radius:0 0 16px 16px;">
+        
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <h4 style="margin:0; color:#9c27b0; font-size:18px;">💬  Личные сообщения</h4>
@@ -585,6 +671,47 @@
     </div>
 </div>
 
+<!-- ===== ПРОФИЛЬ ===== -->
+    <div id="profileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:24px; padding:30px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; color:#0a3b6b;">👤  Мой профиль</h2>
+            <button onclick="closeProfile()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#888;">✕</button>
+        </div>
+        
+        <!-- Аватар -->
+        <div style="text-align:center; margin-bottom:20px; position:relative;">
+            <div id="avatarPreview" style="width:100px; height:100px; border-radius:50%; background:linear-gradient(135deg, #9c27b0, #7b1fa2); margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px; color:white; font-weight:bold; overflow:hidden; position:relative;">
+                👤 
+            </div>
+            <button onclick="document.getElementById('avatarInput').click()" style="position:absolute; bottom:0; right:calc(50% - 50px); background:#1e88e5; color:white; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:16px; box-shadow:0 2px 8px rgba(30,136,229,0.3);">📷</button>
+            <input id="avatarInput" type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this)" />
+            <div id="avatarStatus" style="font-size:12px; color:#888; margin-top:6px; min-height:20px;"></div>
+        </div>
+        
+        <!-- Поля -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+                <label style="font-weight:500; font-size:13px; color:#555; display:block; margin-bottom:4px;">Имя пользователя</label>
+                <input id="profileUsername" style="width:100%; padding:10px 14px; border-radius:12px; border:1px solid #ddd; font-size:15px; outline:none; box-sizing:border-box;" />
+            </div>
+            <div>
+                <label style="font-weight:500; font-size:13px; color:#555; display:block; margin-bottom:4px;">О себе</label>
+                <textarea id="profileBio" rows="3" style="width:100%; padding:10px 14px; border-radius:12px; border:1px solid #ddd; font-size:15px; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:6px;">
+                <button onclick="saveProfile()" style="flex:1; padding:12px; border-radius:12px; border:none; background:#1e88e5; color:white; font-weight:600; cursor:pointer; font-size:15px;">💾  Сохранить</button>
+                <button onclick="deleteAvatar()" style="padding:12px 20px; border-radius:12px; border:none; background:#d32f2f; color:white; font-weight:600; cursor:pointer; font-size:15px;">🗑️ </button>
+            </div>
+        </div>
+        
+        <div id="profileStatus" style="margin-top:12px; text-align:center; font-size:14px; min-height:20px;"></div>
+    </div>
+</div>
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script>
 
@@ -611,8 +738,9 @@
     let typingUsers = {};
 
     let searcResults = [];
+    let currentProfile = null;
 
-    // =========================================================
+// =========================================================
 // ЛИЧНЫЕ СООБЩЕНИЯ (DM)
 // =========================================================
 
@@ -1030,77 +1158,134 @@ console.log('✅ Текущий userId:', currentUserId);
 // ОТМЕТКА О ПРОЧТЕНИИ
 // =========================================================
 
-connection.on('DirectMessagesRead', (byUserId) => {
-    console.log(`✅ Сообщения прочитаны пользователем ${byUserId}`);
-    // Можно обновить список чатов или убрать бейдж
-    loadDmChats();
-});
+    connection.on('DirectMessagesRead', (byUserId) => {
+        console.log(`✅ Сообщения прочитаны пользователем ${byUserId}`);
+        // Можно обновить список чатов или убрать бейдж
+        loadDmChats();
+    });
 
 // =========================================================
 // УДАЛЕНИЕ СООБЩЕНИЯ
 // =========================================================
 
-    connection.on('DirectMessageDeleted', (messageId) => {
-    console.log(`🗑️  Сообщение ${messageId} удалено`);
-    
-    // Удаляем сообщение из DOM
-    const msgElement = document.querySelector(`.dm-message[data-id="${messageId}"]`);
-    if (msgElement) {
-        msgElement.remove();
-    }
-    });
-
-    // ============ Вызов прочтения сообщения при открытии чата ==============
-    async function openDmChat(userId, userName) {
-    currentDmPartnerId = userId;
-    document.getElementById('dmChatPartner').textContent = `Чат с ${userName}`;
-    document.getElementById('dmChatWindow').style.display = 'flex';
-    
-    try {
-        // ===== ОТМЕТКА О ПРОЧТЕНИИ =====
-        await connection.invoke('MarkDirectMessagesAsRead', userId);
-        console.log('✅ Сообщения отмечены как прочитанные');
+        connection.on('DirectMessageDeleted', (messageId) => {
+        console.log(`🗑️  Сообщение ${messageId} удалено`);
         
-        // ===== ЗАГРУЗКА ИСТОРИИ =====
-        await connection.invoke('GetDirectMessages', userId, 50);
-    } catch (e) {
-        console.error('❌ Ошибка:', e);
-    }
-}
+        // Удаляем сообщение из DOM
+        const msgElement = document.querySelector(`.dm-message[data-id="${messageId}"]`);
+        if (msgElement) {
+            msgElement.remove();
+        }
+        });
 
-    connection.on('DirectMessagesHistory', (messages) => {
-        console.log('📜 Тип данных:', typeof messages)
+        // ============ Вызов прочтения сообщения при открытии чата ==============
+        async function openDmChat(userId, userName) {
+        currentDmPartnerId = userId;
+        document.getElementById('dmChatPartner').textContent = `Чат с ${userName}`;
+        document.getElementById('dmChatWindow').style.display = 'flex';
+        
+        try {
+            // ===== ОТМЕТКА О ПРОЧТЕНИИ =====
+            await connection.invoke('MarkDirectMessagesAsRead', userId);
+            console.log('✅ Сообщения отмечены как прочитанные');
 
-        console.log('📜 DirectMessagesHistory СРАБОТАЛ!', messages);
-        console.log('📦 Количество сообщений:', messages?.length || 0);
-    
-    const container = document.getElementById('dmMessages');
-    if (!container) {
-        console.error('❌ dmMessages не найден');
-        return;
+            // ===== ЗАГРУЗКА ИСТОРИИ =====
+            await connection.invoke('GetDirectMessages', userId, 50);
+        } catch (e) {
+            console.error('❌ Ошибка:', e);
+        }
     }
-    
-    container.innerHTML = '';
-    
-    if (!messages || messages.length === 0) {
-        container.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Нет сообщений</p>';
-        return;
-    }
-    
-    messages.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = `dm-message ${msg.senderId === currentUserId ? 'sent' : 'received'}`;
-        div.innerHTML = `
-            ${msg.content}
-            <span class="time">${new Date(msg.sentAt).toLocaleTimeString()}</span>
-        `;
-        container.appendChild(div);
+
+        connection.on('DirectMessagesHistory', (messages) => {
+            console.log('📜 Тип данных:', typeof messages)
+
+            console.log('📜 DirectMessagesHistory СРАБОТАЛ!', messages);
+            console.log('📦 Количество сообщений:', messages?.length || 0);
+        
+        const container = document.getElementById('dmMessages');
+        if (!container) {
+            console.error('❌ dmMessages не найден');
+            return;
+        }
+
+        container.innerHTML = '';
+
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Нет сообщений</p>';
+            return;
+        }
+
+        messages.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = `dm-message ${msg.senderId === currentUserId ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                ${msg.content}
+                <span class="time">${new Date(msg.sentAt).toLocaleTimeString()}</span>
+            `;
+            container.appendChild(div);
+        });
+
+        container.scrollTop = container.scrollHeight;
     });
-    
-    container.scrollTop = container.scrollHeight;
-});
 
-        // =================== START ==================
+    // ============= ПРОФИЛЬ ==================
+     connection.on('MyProfileResult', (result) => {
+        if (result) {
+            currentProfile = result;
+            document.getElementById('profileUsername').value = currentProfile.userName || '';
+            document.getElementById('profileBio').value = currentProfile.bio || '';
+            updateAvatarPreview(currentProfile.avatarUrl, currentProfile.userName);
+        } else {
+            console.error('Ошибка получения профиля:', result.errorMessage);
+        }
+    });
+
+    connection.on('ProfileUpdatedResult', (result) => {
+        if (result) {
+            document.getElementById('profileStatus').textContent = '✅ Профиль обновлен!';
+            currentProfile = result;
+            username = result.userName;
+            localStorage.setItem('chatUsername', username);
+            document.getElementById('userNameDisplay').textContent = '👤  ' + username;
+            setTimeout(() => document.getElementById('profileStatus').textContent = '', 3000);
+        } else {
+            document.getElementById('profileStatus').textContent = '❌ ' + result.errorMessage;
+        }
+    });
+
+    connection.on('AvatarUploadResult', (result) => {
+        if (result) {
+            document.getElementById('avatarStatus').textContent = '✅ Аватар загружен!';
+            updateAvatarPreview(result.data, currentProfile?.userName);
+        } else {
+            document.getElementById('avatarStatus').textContent = '❌ ' + result.errorMessage;
+        }
+    });
+
+    connection.on('AvatarDeleteResult', (result) => {
+        if (result) {
+            document.getElementById('avatarStatus').textContent = '✅ Аватар удален';
+            updateAvatarPreview(null, currentProfile?.userName);
+        } else {
+            document.getElementById('avatarStatus').textContent = '❌ ' + result.errorMessage;
+        }
+    });
+
+    connection.on('UserProfileUpdated', (profile) => {
+        console.log('📝  Профиль', profile.userName, 'обновлен');
+        if (profile.id === currentUserId) {
+            currentProfile = profile;
+            document.getElementById('userNameDisplay').textContent = '👤  ' + profile.userName;
+        }
+    });
+
+    connection.on('UserAvatarChanged', (userId, avatarUrl) => {
+        console.log('🖼️  Аватар пользователя', userId, 'обновлен');
+        updateAllAvatars(userId, avatarUrl);
+    });
+
+
+    // =================== START ==================
         try {
             await connection.start();
             console.log('✅ Подключено');
@@ -1356,6 +1541,7 @@ connection.on('DirectMessagesRead', (byUserId) => {
     });
 });
 
+    
 
     // ============ Поиск сообщений ============
     async function searchMessages() {
@@ -1564,11 +1750,125 @@ async function deleteDirectMessage(messageId) {
         openDmChat(userId, userName);
 }
 
-    // =========================================================
-    // 8. СТАРТ
-    // =========================================================
-    if (token && username) showChat();
-    else authDiv.style.display = 'flex';
+
+// ===================== Функции для профиля пользователя ================
+
+function openProfile() {
+    const modal = document.getElementById('profileModal');
+    modal.style.display = 'flex';
+    connection.invoke('GetMyProfile').catch(e => console.error('Ошибка:', e));
+}
+
+function closeProfile() {
+    document.getElementById('profileModal').style.display = 'none';
+    document.getElementById('profileStatus').textContent = '';
+    document.getElementById('avatarStatus').textContent = '';
+}
+
+// Вешаем обработчик сразу после объявления функции
+(function initProfileButton() {
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    if (userNameDisplay) {
+        console.log('✅ Профиль: элемент найден, вешаю обработчик');
+        userNameDisplay.style.cursor = 'pointer';
+        userNameDisplay.onclick = openProfile;
+        userNameDisplay.title = 'Кликните для редактирования профиля';
+    } else {
+        console.log('⏳ Профиль: элемент пока не найден, жду...');
+        // Если элемент еще не загружен, ждем
+        const observer = new MutationObserver(function() {
+            const el = document.getElementById('userNameDisplay');
+            if (el) {
+                el.style.cursor = 'pointer';
+                el.onclick = openProfile;
+                el.title = 'Кликните для редактирования профиля';
+                console.log('✅ Профиль: обработчик повешен через MutationObserver');
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+})();
+
+
+
+function updateAvatarPreview(avatarUrl, userName) {
+    const preview = document.getElementById('avatarPreview');
+    if (avatarUrl) {
+        preview.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
+    } else {
+        const initials = userName ? userName.charAt(0).toUpperCase() : '👤 ';
+        preview.innerHTML = initials;
+        preview.style.background = 'linear-gradient(135deg, #9c27b0, #7b1fa2)';
+    }
+}
+
+async function saveProfile() {
+    const userName = document.getElementById('profileUsername').value.trim();
+    const bio = document.getElementById('profileBio').value.trim();
+    
+    if (!userName) {
+        document.getElementById('profileStatus').textContent = '❌ Имя не может быть пустым';
+        return;
+    }
+    
+    document.getElementById('profileStatus').textContent = '⏳ Сохранение...';
+    connection.invoke('UpdateProfile', userName, bio).catch(e => {
+        console.error('Ошибка:', e);
+        document.getElementById('profileStatus').textContent = '❌ Ошибка сохранения';
+    });
+}
+
+async function uploadAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        document.getElementById('avatarStatus').textContent = '❌ Файл больше 5MB';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const arrayBuffer = e.target.result;
+        const bytes = new Uint8Array(arrayBuffer);
+        document.getElementById('avatarStatus').textContent = '⏳ Загрузка...';
+        connection.invoke('UploadAvatar', Array.from(bytes), file.name).catch(err => {
+            console.error('Ошибка:', err);
+            document.getElementById('avatarStatus').textContent = '❌ Ошибка загрузки';
+        });
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+async function deleteAvatar() {
+    if (!confirm('Удалить аватар?')) return;
+    document.getElementById('avatarStatus').textContent = '⏳ Удаление...';
+    connection.invoke('DeleteAvatar').catch(e => {
+        console.error('Ошибка:', e);
+        document.getElementById('avatarStatus').textContent = '❌ Ошибка удаления';
+    });
+}
+
+function updateAllAvatars(userId, avatarUrl) {
+    // Обновляем аватарки в списке DM
+    document.querySelectorAll(`.dm-chat-item[data-user-id="${userId}"] .avatar`).forEach(el => {
+        if (avatarUrl) {
+            el.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+        } else {
+            const name = el.dataset.userName || '?';
+            el.textContent = name.charAt(0).toUpperCase();
+        }
+    });
+}
+
+
+ // =========================================================
+ // 8. СТАРТ
+ // =========================================================
+  if (token && username) showChat();
+  else authDiv.style.display = 'flex';
+
 
 </script>
  <!--Уведомления-->>
