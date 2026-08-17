@@ -12,6 +12,9 @@ using ValidatorModel;
 using SearchMessageModel;
 using IDirectMessageServiceModel;
 using DirectChatRoomDTO;
+using UserProfileDTO;
+
+using IUserProfileServiceModel;
 
 
 namespace ChatHubs;
@@ -22,6 +25,7 @@ public class ChatHub : Hub
     private readonly IMessageService _messageService;
     private readonly IRoomService _roomService;
     private readonly IDirectMessageService _directService;
+    private readonly IUserProfileService _userServcie;
     private readonly MessageValidator _messageValidator;
     private readonly RoomValidator _roomValidator;
     private ILogger<ChatHub> _logger;
@@ -29,7 +33,8 @@ public class ChatHub : Hub
 
     public ChatHub(IMessageService messageService, IRoomService roomService, 
                    ILogger<ChatHub> logger, MessageValidator messageValidator, 
-                   RoomValidator roomValidator, IDirectMessageService directService) {
+                   RoomValidator roomValidator, IDirectMessageService directService,
+                   IUserProfileService userService) {
 
         _messageService = messageService;
         _roomService = roomService;
@@ -37,14 +42,17 @@ public class ChatHub : Hub
         _messageValidator = messageValidator;
         _roomValidator = roomValidator;
         _directService = directService;
+        _userServcie = userService;
     }
 
     private string? GetUserName() => Context.User?.Identity?.Name;
+    
     private int GetUserId()
     {
         var claim = Context.User?.FindFirst(ClaimTypes.NameIdentifier);
         return claim is not null ? int.Parse(claim.Value) : 0;
     }
+
 
     public override async Task OnConnectedAsync()
     {
@@ -79,6 +87,54 @@ public class ChatHub : Hub
         await SendOnlineUsers();
 
         await base.OnDisconnectedAsync(ex);
+    }
+
+
+    // =============== Обработчики для профиля пользователя ==================
+    public async Task GetMyProfile()
+    {
+        var userId = GetUserId();
+        var result = await _userServcie.GetProfileAsync(userId);
+
+        if (result.IsSucces) await Clients.Caller.SendAsync("MyProfileResult", result.Data);
+        else await Clients.Caller.SendAsync("MyProfileResult", result.Error);
+    }
+
+    public async Task GetUserProfile(int userId)
+    {
+        var result = await _userServcie.GetProfileAsync(userId);
+        
+        if (result.IsSucces) await Clients.Caller.SendAsync("UserProfileResult", result.Data);
+        else await Clients.Caller.SendAsync("UserProfileResult", result.Error);
+    }
+
+    public async Task UpdateProfile(UpdateProfileDto dto)
+    {
+        var userId = GetUserId();
+        var result = await _userServcie.UpdateProfileAsync(userId, dto);
+
+        if (result.IsSucces) await Clients.Caller.SendAsync("UserProfileUpdate", result.Data);
+        else await Clients.Caller.SendAsync("UserProfileResult", result.Error);
+    }
+
+    public async Task UploadAvatar(byte[] imageData, string fileName)
+    {
+        var userId = GetUserId();
+        
+        using var stream = new MemoryStream(imageData);
+        var result = await _userServcie.UploadAvatarAsync(userId, stream, fileName);
+
+        if (result.IsSucces) await Clients.Caller.SendAsync("AvatarUploadResult", result.Data);
+        else await Clients.Caller.SendAsync("AvatarUploadResult", result.Error);
+    }
+
+    public async Task DeleteAvatar()
+    {
+        var userId = GetUserId();
+        var result = await _userServcie.DeleteAvatarAsync(userId);
+
+        if (result.IsSucces) await Clients.Caller.SendAsync("AvatarDeleteResult", result.Data);
+        else await Clients.Caller.SendAsync("AvatarDeleteResult", result.Error);
     }
 
 
@@ -245,7 +301,7 @@ public class ChatHub : Hub
         }
     }
 
-
+    // =================== Отправка сообщений =================
     public async Task SendMessageToRoom(string message, string roomName)
     {
         var valid = await _messageValidator.ValidateAsync(message);
@@ -286,7 +342,7 @@ public class ChatHub : Hub
         await Clients.Group("Общий").SendAsync("ReceiveMessage", userName, message);
     }
 
-
+    // =============== Подключение к комнате ==================
     public async Task JoinRoom(string roomName)
     {
         var valid = await _roomValidator.ValidateAsync(roomName);
@@ -364,7 +420,7 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync("ReceiveOnlineUsers", users);
     }
 
-
+    // ====================== Получение истории сообщений ==========================
     public async Task GetHistoryMessagesAsync(string roomName, int count = 50)
     {   
         try
