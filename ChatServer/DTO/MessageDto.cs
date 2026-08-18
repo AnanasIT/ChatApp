@@ -12,3 +12,10 @@ public class MessageDto
     public DateTime? EditedAt {get; set;}
     public DateTime DeletedAt {get; set;}
 }
+
+public class SendMessageDto
+{
+    public string Content {get; set;} = string.Empty;
+    public string ImageData {get; set;} = string.Empty;
+    public string ImageName {get; set;} = string.Empty;
+}
