@@ -1230,11 +1230,14 @@ console.log('✅ Текущий userId:', currentUserId);
 
     // ============= ПРОФИЛЬ ==================
      connection.on('MyProfileResult', (result) => {
+        console.log("📦 Профиль получен:", result)
         if (result) {
             currentProfile = result;
             document.getElementById('profileUsername').value = currentProfile.userName || '';
             document.getElementById('profileBio').value = currentProfile.bio || '';
-            updateAvatarPreview(currentProfile.avatarUrl, currentProfile.userName);
+            
+            console.log(currentProfile.avatarURL, currentProfile.userName)
+            updateAvatarPreview(currentProfile.avatarURL, currentProfile.userName);
         } else {
             console.error('Ошибка получения профиля:', result.errorMessage);
         }
@@ -1255,8 +1258,12 @@ console.log('✅ Текущий userId:', currentUserId);
 
     connection.on('AvatarUploadResult', (result) => {
         if (result) {
+            console.log("🔥 AvatarUploadResult сработал!");
+            console.log("📦 Что пришло:", result)
+            console.log("📦 Тип:", typeof result)
+
             document.getElementById('avatarStatus').textContent = '✅ Аватар загружен!';
-            updateAvatarPreview(result.data, currentProfile?.userName);
+            updateAvatarPreview(result, currentProfile?.userName);
         } else {
             document.getElementById('avatarStatus').textContent = '❌ ' + result.errorMessage;
         }
@@ -1819,24 +1826,49 @@ async function saveProfile() {
     });
 }
 
+
 async function uploadAvatar(input) {
     const file = input.files[0];
-    if (!file) return;
+    if (!file) {
+        console.error('❌ Файл не выбран');
+        return;
+    }
+    
+    console.log('📸  Файл выбран:', file.name, file.size, file.type);
     
     if (file.size > 5 * 1024 * 1024) {
         document.getElementById('avatarStatus').textContent = '❌ Файл больше 5MB';
+        input.value = '';
         return;
     }
     
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const arrayBuffer = e.target.result;
-        const bytes = new Uint8Array(arrayBuffer);
-        document.getElementById('avatarStatus').textContent = '⏳ Загрузка...';
-        connection.invoke('UploadAvatar', Array.from(bytes), file.name).catch(err => {
-            console.error('Ошибка:', err);
-            document.getElementById('avatarStatus').textContent = '❌ Ошибка загрузки';
-        });
+        try {
+            const arrayBuffer = e.target.result;
+            const bytes = new Uint8Array(arrayBuffer);
+            
+            console.log('📤 Отправка на сервер:', {
+                methodName: 'UploadAvatar',
+                dataSize: bytes.length,
+                fileName: file.name
+            });
+            
+            document.getElementById('avatarStatus').textContent = '⏳ Загрузка...';
+            
+            const byteList = Array.from(bytes);
+            const result = await connection.invoke('UploadAvatar', byteList, file.name);
+            console.log('✅ Ответ сервера:', result);
+            
+        } catch (err) {
+            console.error('❌ Ошибка при вызове:', err);
+            console.error('❌ Детали ошибки:', err.message);
+            document.getElementById('avatarStatus').textContent = '❌ Ошибка: ' + err.message;
+        }
+    };
+    reader.onerror = function() {
+        console.error('❌ Ошибка чтения файла');
+        document.getElementById('avatarStatus').textContent = '❌ Ошибка чтения файла';
     };
     reader.readAsArrayBuffer(file);
 }
