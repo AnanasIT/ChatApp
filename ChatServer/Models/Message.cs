@@ -14,6 +14,9 @@ public class Message
     public DateTime? EditedAt {get; set;}
     public DateTime DeletedAt {get; set;}
 
+    public string? ImageUrl {get; set;}
+    public string? ThumbnaiUrl {get; set;}
+
     public int UserId {get; set;}
     public User User {get; set;} = null!;
 
