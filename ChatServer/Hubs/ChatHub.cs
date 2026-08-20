@@ -4,7 +4,9 @@ using System.Security.Claims;
 
 using IMessageServcieDTO;
 using IRoomServiceModel;
-using ServiceResultModel;
+using MessageModel;
+
+using AppDb;
 
 using FluentValidation;
 using ValidatorModel;
@@ -14,7 +16,10 @@ using IDirectMessageServiceModel;
 using DirectChatRoomDTO;
 using UserProfileDTO;
 
+using ImageServiceModel;
+
 using IUserProfileServiceModel;
+using UserModel;
 
 
 namespace ChatHubs;
@@ -26,15 +31,18 @@ public class ChatHub : Hub
     private readonly IRoomService _roomService;
     private readonly IDirectMessageService _directService;
     private readonly IUserProfileService _userServcie;
+    private readonly ImageService _imageService;
     private readonly MessageValidator _messageValidator;
     private readonly RoomValidator _roomValidator;
+
+    private readonly AppDbContext _db;
     private ILogger<ChatHub> _logger;
     private static readonly Dictionary<string, string> _onlineUsers = new();
 
     public ChatHub(IMessageService messageService, IRoomService roomService, 
                    ILogger<ChatHub> logger, MessageValidator messageValidator, 
                    RoomValidator roomValidator, IDirectMessageService directService,
-                   IUserProfileService userService) {
+                   IUserProfileService userService, ImageService imageService, AppDbContext db) {
 
         _messageService = messageService;
         _roomService = roomService;
@@ -43,6 +51,8 @@ public class ChatHub : Hub
         _roomValidator = roomValidator;
         _directService = directService;
         _userServcie = userService;
+        _imageService = imageService;
+        _db = db;
     }
 
     private string? GetUserName() => Context.User?.Identity?.Name;
@@ -90,11 +100,57 @@ public class ChatHub : Hub
     }
 
 
+
+    // =================== Отправка сообщений с картинками ===================
+    public async Task SendMessageWithImage(byte[] imageData, string imageName, string roomName, string content)
+    {
+        _logger.LogInformation("🔥 SendMessageWithImage вызван!");
+
+        try
+        {
+            var userId = GetUserId();
+            var userName = GetUserName();
+
+            string? imageUrl = null;
+
+            using var stream = new MemoryStream(imageData);
+            var result = await _imageService.SaveImageAsync(stream, imageName, roomName, content, userId);
+
+            switch (result.IsSucces)
+            {
+                case false:
+                    await Clients.Caller.SendAsync("MessageError", $"{result.Error}");
+                    return;
+            }
+
+            imageUrl = result?.Data?.ImageUrl;
+
+            await Clients.Group(roomName).SendAsync("ReceiveMessage", result?.Data?.UserName,
+                result?.Data?.Content,
+                result?.Data?.Id,
+                result?.Data?.IsDeleted,
+                result?.Data?.IsEdited);
+            
+            await Clients.Caller.SendAsync("MessageSent", result?.Data?.Id);
+
+        }
+
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка отправки сообщения с картинкой");
+            await Clients.Caller.SendAsync("MessageError", "Ошибка отправки сообщения");
+        }
+    }
+
+
+
     // =============== Обработчики для профиля пользователя ==================
     public async Task GetMyProfile()
     {
         var userId = GetUserId();
+
         var result = await _userServcie.GetProfileAsync(userId);
+        _logger.LogInformation($"🔍 Результат GetMyProfile, IsSucess = {result.Data}, Error = {result.Error}");
 
         if (result.IsSucces) await Clients.Caller.SendAsync("MyProfileResult", result.Data);
         else await Clients.Caller.SendAsync("MyProfileResult", result.Error);
@@ -108,24 +164,59 @@ public class ChatHub : Hub
         else await Clients.Caller.SendAsync("UserProfileResult", result.Error);
     }
 
-    public async Task UpdateProfile(UpdateProfileDto dto)
+    public async Task UpdateProfile(string userName, string? bio)
     {
         var userId = GetUserId();
-        var result = await _userServcie.UpdateProfileAsync(userId, dto);
 
-        if (result.IsSucces) await Clients.Caller.SendAsync("UserProfileUpdate", result.Data);
-        else await Clients.Caller.SendAsync("UserProfileResult", result.Error);
+        _logger.LogInformation($"🔍 UpdateProfile вызван, userId={userId}, userName={userName}, bio={bio}");
+        var result = await _userServcie.UpdateProfileAsync(userId, new UpdateProfileDto
+        {
+            UserName = userName,
+            Bio = bio ?? "Unknown"
+        });
+
+        if (result.IsSucces) {
+            await Clients.Caller.SendAsync("ProfileUpdatedResult", result.Data);
+            await Clients.All.SendAsync("UserProfileUpdated", result.Data);
+        }
+        
+        else await Clients.Caller.SendAsync("ProfileUpdatedResult", null);
     }
 
-    public async Task UploadAvatar(byte[] imageData, string fileName)
+    public async Task UploadAvatar(List<byte> imageData, string fileName)
     {
-        var userId = GetUserId();
-        
-        using var stream = new MemoryStream(imageData);
-        var result = await _userServcie.UploadAvatarAsync(userId, stream, fileName);
+        try
+           { 
+             var userId = GetUserId();
+             var bytes = imageData?.ToArray() ?? Array.Empty<byte>();
 
-        if (result.IsSucces) await Clients.Caller.SendAsync("AvatarUploadResult", result.Data);
-        else await Clients.Caller.SendAsync("AvatarUploadResult", result.Error);
+            _logger.LogInformation($"🔍 UploadAvatar вызван: userId={userId}, fileName={fileName}, dataSize={imageData?.Count}");
+
+            if (imageData == null || imageData.Count == 0) {
+                _logger.LogError("❌ Нет данных");
+                await Clients.Caller.SendAsync("AvatarUploadResult", null);
+                return;
+            }
+
+            using var stream = new MemoryStream(bytes);
+            var result = await _userServcie.UploadAvatarAsync(userId, stream, fileName);
+
+            _logger.LogInformation($"🔍 Результат UploadAvatar: IsSuccess={result.Data}, Error={result.Error}");
+
+            if (result.IsSucces) 
+            {
+                await Clients.Caller.SendAsync("AvatarUploadResult", result.Data);
+                await Clients.All.SendAsync("UserAvatarChanged", userId, result.Data);
+            }
+
+            else await Clients.Caller.SendAsync("AvatarUploadResult", result.Error);
+          }
+        
+        catch (Exception ex) {
+            _logger.LogError($"❌ UploadAvatar ERROR: {ex.Message}");
+            _logger.LogError($"❌ StackTrace: {ex.StackTrace}");
+            await Clients.Caller.SendAsync("AvatarUploadResult", null);
+        }
     }
 
     public async Task DeleteAvatar()
@@ -133,8 +224,10 @@ public class ChatHub : Hub
         var userId = GetUserId();
         var result = await _userServcie.DeleteAvatarAsync(userId);
 
-        if (result.IsSucces) await Clients.Caller.SendAsync("AvatarDeleteResult", result.Data);
-        else await Clients.Caller.SendAsync("AvatarDeleteResult", result.Error);
+        await Clients.Caller.SendAsync("AvatarDeleteResult", result);
+
+        if (result.IsSucces) await Clients.Caller.SendAsync("UserAvatarChanged", result.Data);
+        else await Clients.Caller.SendAsync("UserAvatarChanged", result.Error);
     }
 
 
@@ -145,7 +238,6 @@ public class ChatHub : Hub
         var result = await _directService.MarkAsReadAsync(userId, otherUserId);
 
         if (result.IsSucces) {
-            _logger.LogInformation($"✅ Сообщения от {otherUserId} отмечены как прочитанные для {userId}");
             await Clients.User(otherUserId.ToString()).SendAsync("DirectMessagesRead", userId);
         }
 
@@ -159,7 +251,6 @@ public class ChatHub : Hub
         if (result.IsSucces)
         {
             await Clients.All.SendAsync("DirectMessageDeleted", messageId);
-            _logger.LogInformation($"🗑️ Сообщение {messageId} удалено пользователем {userId}");
         }
 
         else {_logger.LogError(result.Error);}
@@ -167,10 +258,7 @@ public class ChatHub : Hub
 
     public async Task SendDirectMessage(int receiverId, string content)
     {
-        _logger.LogInformation("🔥 Вызов SendDirectMessage 🔥");
-
         var sendId = GetUserId();
-        var senderName = GetUserName() ?? "Аноним";
 
         if (string.IsNullOrWhiteSpace(content)) return;
 
@@ -182,8 +270,6 @@ public class ChatHub : Hub
 
     public async Task GetDirectMessages(int otherUserId, int limit = 50)
     {
-        _logger.LogInformation("🔥 Вызов GetDirectMessage 🔥");
-
         var userId = GetUserId();
         var messages = await _directService.GetMessagesAsync(userId, otherUserId, limit);
         await Clients.Caller.SendAsync("DirectMessagesHistory", messages.Data);
@@ -191,8 +277,6 @@ public class ChatHub : Hub
 
     public async Task GetDirectChatRooms()
     {
-        _logger.LogInformation("🔥 вызов GetDirectChatRooms 🔥");
-
         var userId = GetUserId();
         var rooms = await _directService.GetAllChatRoomsAsync(userId);
 
@@ -204,14 +288,12 @@ public class ChatHub : Hub
         }
 
         await Clients.Caller.SendAsync("DirectChatRooms", rooms?.Data);
-        _logger.LogInformation($"✅ Отправлено {rooms?.Data?.Count} комнат");
     }
 
 
     // ========== Метод для поиска сообщений ================
     public async Task SearchMessages(SearchMessageDto request)
     {
-        _logger.LogInformation("🔥 SearchMessages ВЫЗВАН!");
         var userName = GetUserName() ?? "Аноним";
 
         if (string.IsNullOrWhiteSpace(request.RoomName)) request.RoomName = "Общий";
@@ -221,11 +303,9 @@ public class ChatHub : Hub
             return;
         }
 
-        _logger.LogInformation($"🔍 {userName} ищет '{request.Query}' в комнате {request.RoomName}");
         var result = await _messageService.SearchMessagesAsync(request);
 
         if (result.IsSucces) {
-            _logger.LogInformation($"🔥 Найдено {result?.Data?.Count} сообщений!");
             await Clients.Caller.SendAsync("SearchResults", result?.Data);
         }
 
@@ -251,16 +331,12 @@ public class ChatHub : Hub
     {
         try
         {
-            _logger.LogInformation($"🔥 DeleteMessage вызван! ID={messageId}!");
 
             var userId = GetUserId();
             bool isAdmin = Context.User?.IsInRole("Admin") ?? false;
             var result = await _messageService.DeleteMessageAsync(messageId, userId, isAdmin);
-
-            _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}!");
             
             if (result.IsSucces) {
-                Console.WriteLine($"✅ Сообщение {messageId} удалено!");
                 await Clients.All.SendAsync("MessageDeleted", messageId);
             }
 
@@ -280,14 +356,10 @@ public class ChatHub : Hub
     {
         try
         {
-             _logger.LogInformation($"🔥 EditMessage вызван! ID={messageId}, Content={newContent}");
             var userId = GetUserId();
             var result = await _messageService.EditMessageAsync(messageId, userId, newContent);
 
-            _logger.LogInformation($"🔥 Результат: IsSucces={result.IsSucces}, Error={result.Error}");
-
             if (result.IsSucces) {
-                Console.WriteLine($"✅ Сообщение {messageId} изменено!");
                 await Clients.All.SendAsync("MessageEdited", messageId, newContent);
             }
 
